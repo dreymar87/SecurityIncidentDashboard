@@ -1,0 +1,103 @@
+import axios from 'axios';
+
+export const api = axios.create({
+  baseURL: '/api',
+  timeout: 30000,
+});
+
+export interface PaginatedResponse<T> {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  data: T[];
+}
+
+export interface Vulnerability {
+  id: number;
+  cve_id: string;
+  source: string;
+  title: string | null;
+  description: string | null;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' | null;
+  cvss_score: number | null;
+  cvss_vector: string | null;
+  affected_products: Array<{ vendor?: string; product?: string; cpe?: string }>;
+  patch_available: boolean;
+  patch_url: string | null;
+  cisa_kev: boolean;
+  exploit_available: boolean;
+  countries: string[];
+  published_at: string | null;
+  last_modified: string | null;
+}
+
+export interface Breach {
+  id: number;
+  source: string;
+  organization: string | null;
+  domain: string | null;
+  country: string | null;
+  breach_date: string | null;
+  records_affected: number | null;
+  breach_types: string[];
+  is_verified: boolean;
+  is_sensitive: boolean;
+}
+
+export interface ThreatIntel {
+  id: number;
+  source: string;
+  ip_address: string;
+  country: string | null;
+  org: string | null;
+  open_ports: number[];
+  tags: string[];
+  risk_score: number;
+  first_seen: string | null;
+  last_seen: string | null;
+}
+
+export interface DashboardStats {
+  overview: {
+    totalVulnerabilities: number;
+    activeExploits: number;
+    totalBreaches: number;
+    totalBreachRecords: number;
+    threatIps: number;
+  };
+  severityDistribution: Array<{ severity: string; count: string }>;
+  topBreachCountries: Array<{ country: string; count: string }>;
+  topVulnCountries: Array<{ country: string; count: string }>;
+  recentActivity: Array<{
+    type: string;
+    identifier: string;
+    detail: string;
+    event_time: string;
+  }>;
+  lastSync: Array<{ source: string; last_ran: string }>;
+}
+
+export interface VulnFilters {
+  severity?: string;
+  country?: string;
+  source?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  kev?: boolean;
+  exploit?: boolean;
+  q?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface BreachFilters {
+  country?: string;
+  source?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  type?: string;
+  q?: string;
+  page?: number;
+  limit?: number;
+}
