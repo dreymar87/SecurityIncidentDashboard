@@ -17,7 +17,7 @@ module.exports = {
     client: 'pg',
     connection: envConnection(),
     migrations: {
-      directory: './migrations',
+      directory: require('path').join(__dirname, 'migrations'),
     },
     pool: { min: 0, max: 10 },
   },
@@ -27,7 +27,7 @@ module.exports = {
       ? { connectionString: process.env.DATABASE_URL }
       : { ...envConnection(), ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false },
     migrations: {
-      directory: './migrations',
+      directory: require('path').join(__dirname, 'migrations'),
     },
     pool: { min: 0, max: 10 },
   },
