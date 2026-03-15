@@ -26,29 +26,36 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
   const format = path.extname(req.file.originalname).toLowerCase().replace('.', '');
 
-  const [jobId] = await db('import_jobs').insert({
-    filename: req.file.originalname,
-    format,
-    type,
-    status: 'pending',
-  }).returning('id');
+  let jobId;
+  try {
+    const [result] = await db('import_jobs').insert({
+      filename: req.file.originalname,
+      format,
+      type,
+      status: 'pending',
+    }).returning('id');
+    jobId = result.id || result;
+  } catch (err) {
+    console.error('[Import] Failed to create job:', err.message);
+    return res.status(500).json({ error: 'Failed to create import job' });
+  }
 
-  res.json({ jobId: jobId.id || jobId, message: 'Import started' });
+  res.json({ jobId, message: 'Import started' });
 
   // Process asynchronously
   setImmediate(async () => {
     try {
-      await db('import_jobs').where('id', jobId.id || jobId).update({ status: 'processing' });
+      await db('import_jobs').where('id', jobId).update({ status: 'processing' });
       const result = await parseImportFile(req.file.path, format, type);
 
-      await db('import_jobs').where('id', jobId.id || jobId).update({
+      await db('import_jobs').where('id', jobId).update({
         status: 'done',
         records_total: result.total,
         records_imported: result.imported,
         completed_at: new Date(),
       });
     } catch (err) {
-      await db('import_jobs').where('id', jobId.id || jobId).update({
+      await db('import_jobs').where('id', jobId).update({
         status: 'failed',
         error_message: err.message,
         completed_at: new Date(),
