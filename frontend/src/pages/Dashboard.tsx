@@ -58,7 +58,7 @@ export function Dashboard() {
           </ErrorBoundary>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <ErrorBoundary label="Vulnerability Map">
             <WorldMap
               countryData={stats.topVulnCountries}
@@ -71,6 +71,13 @@ export function Dashboard() {
               countryData={stats.topBreachCountries}
               title="Breaches by Country"
               color="#f97316"
+            />
+          </ErrorBoundary>
+          <ErrorBoundary label="Threat Intel Map">
+            <WorldMap
+              countryData={stats.topThreatCountries}
+              title="Threat IPs by Country"
+              color="#a855f7"
             />
           </ErrorBoundary>
         </div>

@@ -69,6 +69,7 @@ export interface DashboardStats {
   severityDistribution: Array<{ severity: string; count: string }>;
   topBreachCountries: Array<{ country: string; count: string }>;
   topVulnCountries: Array<{ country: string; count: string }>;
+  topThreatCountries: Array<{ country: string; count: string }>;
   recentActivity: Array<{
     type: string;
     identifier: string;

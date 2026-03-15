@@ -55,7 +55,7 @@ export function WorldMap({ countryData, title, color = '#0ea5e9' }: WorldMapProp
           </ZoomableGroup>
         </ComposableMap>
       </div>
-      {countryData.length > 0 && (
+      {countryData.length > 0 ? (
         <div className="mt-3 grid grid-cols-2 gap-1">
           {countryData.slice(0, 6).map((d) => (
             <div key={d.country} className="flex items-center justify-between text-xs px-2 py-1 rounded bg-gray-800/50">
@@ -64,6 +64,10 @@ export function WorldMap({ countryData, title, color = '#0ea5e9' }: WorldMapProp
             </div>
           ))}
         </div>
+      ) : (
+        <p className="mt-3 text-xs text-gray-600 text-center py-1">
+          No country data yet — sync or import data to populate this map.
+        </p>
       )}
     </div>
   );
