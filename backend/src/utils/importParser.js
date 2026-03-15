@@ -74,52 +74,54 @@ async function parseImportFile(filePath, format, type) {
   const total = rawRows.length;
   let imported = 0;
 
-  for (const rawRow of rawRows) {
-    const row = mapRow(rawRow, fieldMap);
+  await db.transaction(async (trx) => {
+    for (const rawRow of rawRows) {
+      const row = mapRow(rawRow, fieldMap);
 
-    try {
-      if (type === 'vulnerabilities') {
-        if (!row.cve_id) continue;
-        const record = {
-          cve_id: row.cve_id,
-          source: 'imported',
-          title: row.title || row.cve_id,
-          description: row.description || null,
-          severity: row.severity ? row.severity.toUpperCase() : null,
-          cvss_score: row.cvss_score ? parseFloat(row.cvss_score) : null,
-          countries: row.countries ? pgArrayLiteral(row.countries) : '{}',
-          published_at: row.published_at ? new Date(row.published_at) : null,
-          patch_available: ['true', '1', 'yes'].includes(String(row.patch_available).toLowerCase()),
-          cisa_kev: false,
-          exploit_available: false,
-        };
-        await db('vulnerabilities').insert(record).onConflict('cve_id').merge({
-          source: 'imported',
-          title: record.title,
-          description: record.description,
-          severity: record.severity,
-          cvss_score: record.cvss_score,
-        });
-      } else {
-        const record = {
-          source: 'imported',
-          breach_key: `imported:${row.organization || ''}:${row.breach_date || Date.now()}`,
-          organization: row.organization || null,
-          domain: row.domain || null,
-          country: row.country || null,
-          breach_date: row.breach_date ? new Date(row.breach_date) : null,
-          records_affected: row.records_affected ? parseInt(row.records_affected) : null,
-          breach_types: row.breach_types ? pgArrayLiteral(row.breach_types) : '{}',
-          description: row.description || null,
-          is_verified: ['true', '1', 'yes'].includes(String(row.is_verified || '').toLowerCase()),
-        };
-        await db('breaches').insert(record).onConflict('breach_key').ignore();
+      try {
+        if (type === 'vulnerabilities') {
+          if (!row.cve_id) continue;
+          const record = {
+            cve_id: row.cve_id,
+            source: 'imported',
+            title: row.title || row.cve_id,
+            description: row.description || null,
+            severity: row.severity ? row.severity.toUpperCase() : null,
+            cvss_score: row.cvss_score ? parseFloat(row.cvss_score) : null,
+            countries: row.countries ? pgArrayLiteral(row.countries) : '{}',
+            published_at: row.published_at ? new Date(row.published_at) : null,
+            patch_available: ['true', '1', 'yes'].includes(String(row.patch_available).toLowerCase()),
+            cisa_kev: false,
+            exploit_available: false,
+          };
+          await trx('vulnerabilities').insert(record).onConflict('cve_id').merge({
+            source: 'imported',
+            title: record.title,
+            description: record.description,
+            severity: record.severity,
+            cvss_score: record.cvss_score,
+          });
+        } else {
+          const record = {
+            source: 'imported',
+            breach_key: `imported:${row.organization || ''}:${row.breach_date || Date.now()}`,
+            organization: row.organization || null,
+            domain: row.domain || null,
+            country: row.country || null,
+            breach_date: row.breach_date ? new Date(row.breach_date) : null,
+            records_affected: row.records_affected ? parseInt(row.records_affected) : null,
+            breach_types: row.breach_types ? pgArrayLiteral(row.breach_types) : '{}',
+            description: row.description || null,
+            is_verified: ['true', '1', 'yes'].includes(String(row.is_verified || '').toLowerCase()),
+          };
+          await trx('breaches').insert(record).onConflict('breach_key').ignore();
+        }
+        imported++;
+      } catch (err) {
+        console.warn('[Import] Skipped row:', err.message);
       }
-      imported++;
-    } catch (err) {
-      console.warn('[Import] Skipped row:', err.message);
     }
-  }
+  });
 
   // Cleanup temp file
   try { fs.unlinkSync(filePath); } catch (_) {}

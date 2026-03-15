@@ -1,5 +1,6 @@
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 import { scaleLinear } from 'd3-scale';
+import { COUNTRY_NAME_MAP } from '../../data/countryNames';
 
 const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
@@ -8,14 +9,6 @@ interface WorldMapProps {
   title: string;
   color?: string;
 }
-
-// Country name to ISO mapping for common countries
-const COUNTRY_NAME_MAP: Record<string, string> = {
-  'United States': 'USA', 'United Kingdom': 'GBR', 'Germany': 'DEU',
-  'France': 'FRA', 'China': 'CHN', 'Russia': 'RUS', 'India': 'IND',
-  'Brazil': 'BRA', 'Canada': 'CAN', 'Australia': 'AUS', 'Japan': 'JPN',
-  'South Korea': 'KOR', 'Netherlands': 'NLD', 'Sweden': 'SWE',
-};
 
 export function WorldMap({ countryData, title, color = '#0ea5e9' }: WorldMapProps) {
   const maxCount = Math.max(...countryData.map((d) => parseInt(d.count) || 0), 1);

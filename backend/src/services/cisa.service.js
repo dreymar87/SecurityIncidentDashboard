@@ -1,4 +1,4 @@
-const axios = require('axios');
+const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
 
 const CISA_KEV_URL =
@@ -9,7 +9,7 @@ async function syncCisaKev() {
   let recordsSynced = 0;
 
   try {
-    const { data } = await axios.get(CISA_KEV_URL, { timeout: 30000 });
+    const { data } = await axiosWithRetry({ url: CISA_KEV_URL, timeout: 30000 });
     const vulns = data.vulnerabilities || [];
 
     for (const v of vulns) {

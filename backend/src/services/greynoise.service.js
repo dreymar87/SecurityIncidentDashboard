@@ -1,4 +1,4 @@
-const axios = require('axios');
+const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
 
 const GN_BASE = 'https://api.greynoise.io/v3';
@@ -15,18 +15,23 @@ async function syncGreyNoise() {
 
   try {
     // Fetch community noise data (malicious IPs seen in last 24h)
-    const { data } = await axios.get(`${GN_BASE}/community/query`, {
-      params: { ip: '0.0.0.0/0', size: 100 },
-      headers: { key: apiKey },
-      timeout: 30000,
-    }).catch(async () => {
+    let data;
+    try {
+      ({ data } = await axiosWithRetry({
+        url: `${GN_BASE}/community/query`,
+        params: { ip: '0.0.0.0/0', size: 100 },
+        headers: { key: apiKey },
+        timeout: 30000,
+      }));
+    } catch {
       // Fallback: use GNQL query for riot + noise
-      return axios.get(`${GN_BASE}/experimental/gnql`, {
+      ({ data } = await axiosWithRetry({
+        url: `${GN_BASE}/experimental/gnql`,
         params: { query: 'classification:malicious', size: 100 },
         headers: { key: apiKey },
         timeout: 30000,
-      });
-    });
+      }));
+    }
 
     const ips = data.data || data.records || [];
 

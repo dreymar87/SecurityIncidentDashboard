@@ -3,13 +3,25 @@ const router = express.Router();
 const db = require('../db');
 const { Parser } = require('json2csv');
 
+function sanitizePagination(rawPage, rawLimit) {
+  const page = Math.max(1, parseInt(rawPage) || 1);
+  const limit = Math.min(200, Math.max(1, parseInt(rawLimit) || 50));
+  return { page, limit };
+}
+
 // GET /api/breaches
 router.get('/', async (req, res) => {
   try {
-    const {
-      country, source, dateFrom, dateTo, type,
-      q, page = 1, limit = 50, export: exportFormat,
-    } = req.query;
+    const { country, source, dateFrom, dateTo, type, export: exportFormat } = req.query;
+    const q = req.query.q ? String(req.query.q).slice(0, 200) : undefined;
+    const { page, limit } = sanitizePagination(req.query.page, req.query.limit);
+
+    if (dateFrom && isNaN(new Date(dateFrom).getTime())) {
+      return res.status(400).json({ error: 'Invalid dateFrom value' });
+    }
+    if (dateTo && isNaN(new Date(dateTo).getTime())) {
+      return res.status(400).json({ error: 'Invalid dateTo value' });
+    }
 
     let query = db('breaches');
 
@@ -41,7 +53,7 @@ router.get('/', async (req, res) => {
       return res.send(csv);
     }
 
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const offset = (page - 1) * limit;
     const [{ total }, rows] = await Promise.all([
       query.clone().count('id as total').first(),
       query
@@ -49,15 +61,15 @@ router.get('/', async (req, res) => {
           'breach_date', 'records_affected', 'breach_types',
           'is_verified', 'is_sensitive', 'created_at')
         .orderBy('breach_date', 'desc')
-        .limit(parseInt(limit))
+        .limit(limit)
         .offset(offset),
     ]);
 
     res.json({
       total: parseInt(total),
-      page: parseInt(page),
-      limit: parseInt(limit),
-      pages: Math.ceil(parseInt(total) / parseInt(limit)),
+      page,
+      limit,
+      pages: Math.ceil(parseInt(total) / limit),
       data: rows,
     });
   } catch (err) {

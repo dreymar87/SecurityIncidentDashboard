@@ -1,4 +1,4 @@
-const axios = require('axios');
+const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
 
 const HIBP_BASE = 'https://haveibeenpwned.com/api/v3';
@@ -14,7 +14,8 @@ async function syncHibpBreaches() {
   let recordsSynced = 0;
 
   try {
-    const { data: breaches } = await axios.get(`${HIBP_BASE}/breaches`, {
+    const { data: breaches } = await axiosWithRetry({
+      url: `${HIBP_BASE}/breaches`,
       headers: { 'hibp-api-key': apiKey, 'user-agent': 'SecurityIncidentDashboard/1.0' },
       timeout: 30000,
     });

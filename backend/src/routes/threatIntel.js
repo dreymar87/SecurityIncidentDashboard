@@ -2,10 +2,18 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+function sanitizePagination(rawPage, rawLimit) {
+  const page = Math.max(1, parseInt(rawPage) || 1);
+  const limit = Math.min(200, Math.max(1, parseInt(rawLimit) || 50));
+  return { page, limit };
+}
+
 // GET /api/threat-intel
 router.get('/', async (req, res) => {
   try {
-    const { country, source, q, page = 1, limit = 50 } = req.query;
+    const { country, source } = req.query;
+    const q = req.query.q ? String(req.query.q).slice(0, 200) : undefined;
+    const { page, limit } = sanitizePagination(req.query.page, req.query.limit);
 
     let query = db('threat_intel');
 
@@ -22,22 +30,22 @@ router.get('/', async (req, res) => {
       );
     }
 
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const offset = (page - 1) * limit;
     const [{ total }, rows] = await Promise.all([
       query.clone().count('id as total').first(),
       query
         .select('id', 'source', 'ip_address', 'country', 'org',
           'open_ports', 'tags', 'risk_score', 'first_seen', 'last_seen')
         .orderBy('risk_score', 'desc')
-        .limit(parseInt(limit))
+        .limit(limit)
         .offset(offset),
     ]);
 
     res.json({
       total: parseInt(total),
-      page: parseInt(page),
-      limit: parseInt(limit),
-      pages: Math.ceil(parseInt(total) / parseInt(limit)),
+      page,
+      limit,
+      pages: Math.ceil(parseInt(total) / limit),
       data: rows,
     });
   } catch (err) {

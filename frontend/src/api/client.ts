@@ -101,3 +101,16 @@ export interface BreachFilters {
   page?: number;
   limit?: number;
 }
+
+export interface ImportJob {
+  id: number;
+  filename: string;
+  format: string;
+  type: string;
+  status: 'pending' | 'processing' | 'done' | 'failed';
+  records_total: number | null;
+  records_imported: number | null;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+}

@@ -1,4 +1,4 @@
-const axios = require('axios');
+const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
 
 const NVD_BASE = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
@@ -45,7 +45,7 @@ async function syncNvd({ daysBack = 7 } = {}) {
         resultsPerPage: pageSize,
       };
 
-      const { data } = await axios.get(NVD_BASE, { params, headers, timeout: 60000 });
+      const { data } = await axiosWithRetry({ url: NVD_BASE, params, headers, timeout: 60000 });
       const items = data.vulnerabilities || [];
 
       for (const item of items) {

@@ -4,6 +4,7 @@ import { Breach } from '../api/client';
 import { FilterBar } from '../components/filters/FilterBar';
 import { BreachTable } from '../components/breaches/BreachTable';
 import { BreachDetail } from '../components/breaches/BreachDetail';
+import { SkeletonTable } from '../components/SkeletonLoader';
 import { TopBar } from '../components/layout/TopBar';
 
 export function Breaches() {
@@ -39,11 +40,7 @@ export function Breaches() {
             loading={isLoading}
           />
         )}
-        {!data && isLoading && (
-          <div className="card flex items-center justify-center h-48 text-gray-500">
-            Loading breaches…
-          </div>
-        )}
+        {!data && isLoading && <SkeletonTable rows={10} cols={6} />}
       </div>
       {selectedBreach && (
         <BreachDetail breach={selectedBreach} onClose={() => setSelectedBreach(null)} />

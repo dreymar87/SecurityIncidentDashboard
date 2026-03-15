@@ -37,8 +37,6 @@ export function ThreatIntelPage() {
           >
             <option value="">All Sources</option>
             <option value="greynoise">GreyNoise</option>
-            <option value="shodan">Shodan</option>
-            <option value="censys">Censys</option>
           </select>
           {Object.values(filters).some(Boolean) && (
             <button
