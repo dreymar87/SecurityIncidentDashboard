@@ -34,7 +34,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       type,
       status: 'pending',
     }).returning('id');
-    jobId = result.id || result;
+    jobId = result.id;
   } catch (err) {
     console.error('[Import] Failed to create job:', err.message);
     return res.status(500).json({ error: 'Failed to create import job' });
