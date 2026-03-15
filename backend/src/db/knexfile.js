@@ -19,7 +19,7 @@ module.exports = {
     migrations: {
       directory: './migrations',
     },
-    pool: { min: 2, max: 10 },
+    pool: { min: 0, max: 10 },
   },
   production: {
     client: 'pg',
@@ -29,6 +29,6 @@ module.exports = {
     migrations: {
       directory: './migrations',
     },
-    pool: { min: 2, max: 10 },
+    pool: { min: 0, max: 10 },
   },
 };
