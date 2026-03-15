@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { api, DashboardStats, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters } from './client';
+import { api, DashboardStats, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters } from './client';
 
 export function useStats() {
   return useQuery<DashboardStats>({
@@ -67,9 +67,14 @@ export function useBreachRelatedVulns(breachId: number | null) {
 }
 
 export function useImportJobs() {
-  return useQuery({
+  return useQuery<ImportJob[]>({
     queryKey: ['import-jobs'],
     queryFn: () => api.get('/imports').then((r) => r.data),
-    refetchInterval: 5000,
+    refetchInterval: (query) => {
+      const jobs = query.state.data;
+      if (!jobs || jobs.length === 0) return false;
+      const hasActive = jobs.some((j) => j.status === 'pending' || j.status === 'processing');
+      return hasActive ? 3000 : false;
+    },
   });
 }

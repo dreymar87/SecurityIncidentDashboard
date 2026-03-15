@@ -1,6 +1,7 @@
 import { TopBar } from '../components/layout/TopBar';
 import { ImportWizard } from '../components/imports/ImportWizard';
 import { useImportJobs } from '../api/hooks';
+import { ImportJob } from '../api/client';
 import { format } from 'date-fns';
 import { CheckCircle, XCircle, Loader, Clock } from 'lucide-react';
 
@@ -28,10 +29,7 @@ export function Import() {
             <p className="text-xs text-gray-500 text-center py-6">No import jobs yet.</p>
           )}
           <div className="space-y-2">
-            {(jobs || []).map((job: {
-              id: number; filename: string; type: string; status: string;
-              records_imported: number; records_total: number; created_at: string;
-            }) => (
+            {(jobs || []).map((job: ImportJob) => (
               <div key={job.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-gray-800/50">
                 {STATUS_ICON[job.status] || STATUS_ICON.pending}
                 <div className="flex-1 min-w-0">

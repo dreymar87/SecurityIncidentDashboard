@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useVulnerabilities } from '../api/hooks';
 import { FilterBar } from '../components/filters/FilterBar';
 import { VulnTable } from '../components/vulnerabilities/VulnTable';
+import { SkeletonTable } from '../components/SkeletonLoader';
 import { TopBar } from '../components/layout/TopBar';
 
 export function Vulnerabilities() {
@@ -39,11 +40,7 @@ export function Vulnerabilities() {
             loading={isLoading}
           />
         )}
-        {!data && isLoading && (
-          <div className="card flex items-center justify-center h-48 text-gray-500">
-            Loading vulnerabilities…
-          </div>
-        )}
+        {!data && isLoading && <SkeletonTable rows={10} cols={7} />}
       </div>
     </div>
   );
