@@ -29,6 +29,13 @@ function normalizeKey(key) {
   return key.toLowerCase().replace(/[\s\-]/g, '_');
 }
 
+function pgArrayLiteral(csv) {
+  return `{${String(csv).split(',').map((t) => {
+    const v = t.trim().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    return `"${v}"`;
+  }).join(',')}}`;
+}
+
 function mapRow(row, fieldMap) {
   const normalized = {};
   for (const [rawKey, value] of Object.entries(row)) {
@@ -80,9 +87,7 @@ async function parseImportFile(filePath, format, type) {
           description: row.description || null,
           severity: row.severity ? row.severity.toUpperCase() : null,
           cvss_score: row.cvss_score ? parseFloat(row.cvss_score) : null,
-          countries: row.countries
-            ? `{${String(row.countries).split(',').map((c) => c.trim()).join(',')}}`
-            : '{}',
+          countries: row.countries ? pgArrayLiteral(row.countries) : '{}',
           published_at: row.published_at ? new Date(row.published_at) : null,
           patch_available: ['true', '1', 'yes'].includes(String(row.patch_available).toLowerCase()),
           cisa_kev: false,
@@ -104,9 +109,7 @@ async function parseImportFile(filePath, format, type) {
           country: row.country || null,
           breach_date: row.breach_date ? new Date(row.breach_date) : null,
           records_affected: row.records_affected ? parseInt(row.records_affected) : null,
-          breach_types: row.breach_types
-            ? `{${String(row.breach_types).split(',').map((t) => t.trim()).join(',')}}`
-            : '{}',
+          breach_types: row.breach_types ? pgArrayLiteral(row.breach_types) : '{}',
           description: row.description || null,
           is_verified: ['true', '1', 'yes'].includes(String(row.is_verified || '').toLowerCase()),
         };

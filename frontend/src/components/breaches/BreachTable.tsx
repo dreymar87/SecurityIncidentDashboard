@@ -8,6 +8,7 @@ interface BreachTableProps {
   page: number;
   pages: number;
   onPageChange: (page: number) => void;
+  onSelect: (breach: Breach) => void;
   loading?: boolean;
 }
 
@@ -19,7 +20,7 @@ function formatRecords(n: number | null) {
   return n.toLocaleString();
 }
 
-export function BreachTable({ data, total, page, pages, onPageChange, loading }: BreachTableProps) {
+export function BreachTable({ data, total, page, pages, onPageChange, onSelect, loading }: BreachTableProps) {
   return (
     <div className="card p-0 overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
@@ -57,7 +58,7 @@ export function BreachTable({ data, total, page, pages, onPageChange, loading }:
               </tr>
             )}
             {data.map((breach) => (
-              <tr key={breach.id} className="table-row">
+              <tr key={breach.id} className="table-row cursor-pointer" onClick={() => onSelect(breach)}>
                 <td className="table-cell font-medium text-gray-200">{breach.organization || '—'}</td>
                 <td className="table-cell text-xs font-mono text-gray-400">{breach.domain || '—'}</td>
                 <td className="table-cell">{breach.country || '—'}</td>
