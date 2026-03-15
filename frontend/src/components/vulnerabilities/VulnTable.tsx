@@ -67,7 +67,7 @@ export function VulnTable({ data, total, page, pages, onPageChange, loading }: V
                   <SeverityBadge severity={vuln.severity} />
                 </td>
                 <td className="table-cell font-mono text-xs">
-                  {vuln.cvss_score !== null ? vuln.cvss_score.toFixed(1) : '—'}
+                  {vuln.cvss_score != null ? Number(vuln.cvss_score).toFixed(1) : '—'}
                 </td>
                 <td className="table-cell max-w-xs">
                   <span className="truncate block text-gray-300">
