@@ -66,4 +66,32 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/breaches/:id
+router.get('/:id', async (req, res) => {
+  try {
+    const breach = await db('breaches').where('id', req.params.id).first();
+    if (!breach) return res.status(404).json({ error: 'Not found' });
+    res.json(breach);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch breach' });
+  }
+});
+
+// GET /api/breaches/:id/related-vulns
+router.get('/:id/related-vulns', async (req, res) => {
+  try {
+    const breach = await db('breaches').where('id', req.params.id).first();
+    if (!breach || !breach.country) return res.json([]);
+    const vulns = await db('vulnerabilities')
+      .whereRaw('? = ANY(countries)', [breach.country])
+      .whereIn('severity', ['CRITICAL', 'HIGH'])
+      .orderBy('cvss_score', 'desc')
+      .select('id', 'cve_id', 'title', 'severity', 'cvss_score', 'cisa_kev', 'patch_available')
+      .limit(5);
+    res.json(vulns);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch related vulnerabilities' });
+  }
+});
+
 module.exports = router;

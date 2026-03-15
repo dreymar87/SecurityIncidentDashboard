@@ -58,6 +58,14 @@ export function useSyncStatus() {
   });
 }
 
+export function useBreachRelatedVulns(breachId: number | null) {
+  return useQuery<Vulnerability[]>({
+    queryKey: ['breach-related-vulns', breachId],
+    queryFn: () => api.get(`/breaches/${breachId}/related-vulns`).then((r) => r.data),
+    enabled: breachId !== null,
+  });
+}
+
 export function useImportJobs() {
   return useQuery({
     queryKey: ['import-jobs'],

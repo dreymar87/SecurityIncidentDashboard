@@ -35,8 +35,8 @@ export function VulnDetail({ cveId, onClose }: VulnDetailProps) {
             {/* Severity & Score */}
             <div className="flex items-center gap-3">
               <SeverityBadge severity={vuln.severity} />
-              {vuln.cvss_score !== null && (
-                <span className="text-2xl font-bold font-mono text-white">{vuln.cvss_score.toFixed(1)}</span>
+              {vuln.cvss_score != null && (
+                <span className="text-2xl font-bold font-mono text-white">{Number(vuln.cvss_score).toFixed(1)}</span>
               )}
               {vuln.cvss_vector && (
                 <span className="text-xs text-gray-500 font-mono truncate">{vuln.cvss_vector}</span>
