@@ -4,7 +4,12 @@ import { ThreatPanel } from '../components/threatIntel/ThreatPanel';
 import { TopBar } from '../components/layout/TopBar';
 import { Search, X } from 'lucide-react';
 
-export function ThreatIntelPage() {
+interface PageProps {
+  onMobileMenuToggle?: () => void;
+  isMobile?: boolean;
+}
+
+export function ThreatIntelPage({ onMobileMenuToggle, isMobile }: PageProps) {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
 
@@ -12,7 +17,7 @@ export function ThreatIntelPage() {
 
   return (
     <div>
-      <TopBar title="Threat Intelligence" />
+      <TopBar title="Threat Intelligence" onMobileMenuToggle={onMobileMenuToggle} isMobile={isMobile} />
       <div className="p-6 space-y-4">
         <div className="card flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-48">

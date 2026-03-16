@@ -1,8 +1,30 @@
-import { Search, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Search, X, Save, ChevronDown, Trash2 } from 'lucide-react';
 
 const SEVERITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'NONE'];
 const SOURCES_VULN = ['nvd', 'cisa', 'osv', 'ghsa', 'imported'];
 const SOURCES_BREACH = ['hibp', 'imported'];
+
+const PRESETS_KEY = 'securesight-filter-presets';
+
+interface FilterPreset {
+  name: string;
+  mode: string;
+  filters: Record<string, string | boolean | undefined>;
+}
+
+function loadPresets(): FilterPreset[] {
+  try {
+    const raw = localStorage.getItem(PRESETS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePresets(presets: FilterPreset[]) {
+  localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
+}
 
 interface FilterBarProps {
   mode: 'vulnerabilities' | 'breaches' | 'threat-intel';
@@ -13,6 +35,66 @@ interface FilterBarProps {
 
 export function FilterBar({ mode, filters, onChange, onClear }: FilterBarProps) {
   const hasFilters = Object.values(filters).some((v) => v !== undefined && v !== '' && v !== false);
+  const [presets, setPresets] = useState<FilterPreset[]>(loadPresets);
+  const [presetsOpen, setPresetsOpen] = useState(false);
+  const [savingName, setSavingName] = useState<string | null>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const presetsRef = useRef<HTMLDivElement>(null);
+
+  const modePresets = presets.filter((p) => p.mode === mode);
+
+  useEffect(() => {
+    if (savingName !== null && nameInputRef.current) {
+      nameInputRef.current.focus();
+    }
+  }, [savingName]);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (presetsRef.current && !presetsRef.current.contains(e.target as Node)) {
+        setPresetsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  function handleSave() {
+    if (savingName === null) {
+      setSavingName('');
+      return;
+    }
+    const name = savingName.trim();
+    if (!name) return;
+    const updated = [...presets, { name, mode, filters }];
+    setPresets(updated);
+    savePresets(updated);
+    setSavingName(null);
+  }
+
+  function handleLoad(preset: FilterPreset) {
+    onClear();
+    for (const [key, value] of Object.entries(preset.filters)) {
+      if (value !== undefined && value !== '' && value !== false) {
+        onChange(key, value);
+      }
+    }
+    setPresetsOpen(false);
+  }
+
+  function handleDelete(index: number) {
+    // index is within the full presets array for this mode
+    const globalIndex = presets.findIndex((p, i) => {
+      const modeMatches = presets.slice(0, i + 1).filter((pp) => pp.mode === mode);
+      return modeMatches.length === index + 1;
+    });
+    if (globalIndex >= 0) {
+      const updated = presets.filter((_, i) => i !== globalIndex);
+      setPresets(updated);
+      savePresets(updated);
+    }
+  }
 
   return (
     <div className="card flex flex-wrap gap-3 items-center">
@@ -96,6 +178,67 @@ export function FilterBar({ mode, filters, onChange, onClear }: FilterBarProps) 
           </label>
         </>
       )}
+
+      {/* Presets */}
+      <div ref={presetsRef} className="relative">
+        <button
+          onClick={() => setPresetsOpen(!presetsOpen)}
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors btn-secondary py-1.5 px-3"
+        >
+          <ChevronDown size={12} /> Presets{modePresets.length > 0 && ` (${modePresets.length})`}
+        </button>
+
+        {presetsOpen && (
+          <div
+            className="absolute right-0 top-full mt-1 w-56 rounded-lg border shadow-xl overflow-hidden z-30"
+            style={{ backgroundColor: 'var(--color-bg-secondary)', borderColor: 'var(--color-border)' }}
+          >
+            {modePresets.length === 0 && (
+              <div className="px-3 py-3 text-xs text-gray-500 text-center">No saved presets.</div>
+            )}
+            {modePresets.map((preset, i) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800/50 transition-colors group">
+                <button
+                  onClick={() => handleLoad(preset)}
+                  className="flex-1 text-left text-xs font-medium truncate"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  {preset.name}
+                </button>
+                <button
+                  onClick={() => handleDelete(i)}
+                  className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+            <div className="border-t px-3 py-2" style={{ borderColor: 'var(--color-border)' }}>
+              {savingName !== null ? (
+                <div className="flex gap-1.5">
+                  <input
+                    ref={nameInputRef}
+                    className="input text-xs py-1 flex-1"
+                    placeholder="Preset name"
+                    value={savingName}
+                    onChange={(e) => setSavingName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setSavingName(null); }}
+                  />
+                  <button onClick={handleSave} className="btn-primary text-xs py-1 px-2">Save</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { if (hasFilters) setSavingName(''); }}
+                  disabled={!hasFilters}
+                  className="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 disabled:text-gray-600 disabled:cursor-not-allowed"
+                >
+                  <Save size={12} /> Save current filters
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {hasFilters && (
         <button onClick={onClear} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors ml-auto">

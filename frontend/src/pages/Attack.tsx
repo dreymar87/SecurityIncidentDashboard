@@ -21,7 +21,12 @@ const TACTIC_LABELS: Record<string, string> = {
   'impact': 'Impact',
 };
 
-export function Attack() {
+interface PageProps {
+  onMobileMenuToggle?: () => void;
+  isMobile?: boolean;
+}
+
+export function Attack({ onMobileMenuToggle, isMobile }: PageProps) {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const { data: grouped, isLoading } = useAttackTechniques(search ? { q: search } : {});
@@ -32,7 +37,7 @@ export function Attack() {
 
   return (
     <>
-      <TopBar title="MITRE ATT&CK" />
+      <TopBar title="MITRE ATT&CK" onMobileMenuToggle={onMobileMenuToggle} isMobile={isMobile} />
       <div className="p-6 space-y-4">
         {/* Search */}
         <div className="relative max-w-md">

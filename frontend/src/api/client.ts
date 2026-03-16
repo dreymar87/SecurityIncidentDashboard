@@ -79,6 +79,18 @@ export interface DashboardStats {
   lastSync: Array<{ source: string; last_ran: string }>;
 }
 
+export interface SearchResults {
+  vulnerabilities: Array<{ id: number; cve_id: string; title: string | null; severity: string | null; cvss_score: number | null }>;
+  breaches: Array<{ id: number; organization: string | null; domain: string | null; country: string | null; records_affected: number | null }>;
+  threatIntel: Array<{ id: number; ip_address: string; country: string | null; org: string | null; risk_score: number }>;
+}
+
+export interface TrendData {
+  vulnerabilities: Array<{ date: string; count: string }>;
+  breaches: Array<{ date: string; count: string }>;
+  threatIntel: Array<{ date: string; count: string }>;
+}
+
 export interface VulnFilters {
   severity?: string;
   country?: string;

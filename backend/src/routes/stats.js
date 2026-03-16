@@ -99,4 +99,47 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/stats/trends?range=7d|30d|90d
+router.get('/trends', async (req, res) => {
+  try {
+    const rangeParam = req.query.range || '30d';
+    const days = rangeParam === '7d' ? 7 : rangeParam === '90d' ? 90 : 30;
+
+    const [vulnTrends, breachTrends, threatTrends] = await Promise.all([
+      db.raw(`
+        SELECT DATE(published_at) AS date, COUNT(*) AS count
+        FROM vulnerabilities
+        WHERE published_at >= NOW() - INTERVAL '${days} days'
+          AND published_at IS NOT NULL
+        GROUP BY DATE(published_at)
+        ORDER BY date
+      `),
+      db.raw(`
+        SELECT DATE(breach_date) AS date, COUNT(*) AS count
+        FROM breaches
+        WHERE breach_date >= NOW() - INTERVAL '${days} days'
+          AND breach_date IS NOT NULL
+        GROUP BY DATE(breach_date)
+        ORDER BY date
+      `),
+      db.raw(`
+        SELECT DATE(created_at) AS date, COUNT(*) AS count
+        FROM threat_intel
+        WHERE created_at >= NOW() - INTERVAL '${days} days'
+        GROUP BY DATE(created_at)
+        ORDER BY date
+      `),
+    ]);
+
+    res.json({
+      vulnerabilities: vulnTrends.rows,
+      breaches: breachTrends.rows,
+      threatIntel: threatTrends.rows,
+    });
+  } catch (err) {
+    logger.error({ err }, 'Failed to fetch trends');
+    res.status(500).json({ error: 'Failed to fetch trends' });
+  }
+});
+
 module.exports = router;

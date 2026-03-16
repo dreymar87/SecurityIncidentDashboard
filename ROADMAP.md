@@ -2,32 +2,7 @@
 
 This document tracks planned features and improvements. Items are grouped by phase and ordered by suggested implementation sequence within each phase.
 
-**Current status**: Phase 2 complete (feature expansion).
-
----
-
-## Phase 3 — Production Readiness
-
-| Status | ID | Feature | Description |
-|--------|-----|---------|-------------|
-| ⬜ | P3-1 | **Test framework** | `jest` + `supertest` for backend, `vitest` + `@testing-library/react` for frontend. Priority targets: filter param validation, import transaction rollback, HTTP retry logic, `SeverityBadge` render, WorldMap country lookup. |
-| ⬜ | P3-2 | **GitHub Actions CI** | `ci.yml`: lint + test-backend + test-frontend + `docker compose build` on every PR. `release.yml`: build and push images to GHCR on `v*.*.*` tags. Pair with P3-1. |
-| ⬜ | P3-3 | **Structured logging + metrics** | Replace `console.*` with `pino`. Prometheus `/metrics` endpoint via `prom-client` exposing `http_requests_total`, `sync_duration_seconds`, `sync_records_total`. Optional Grafana sidecar in `docker-compose.yml`. |
-| ⬜ | P3-4 | **Optional authentication** | Passport.js local strategy with Postgres-backed sessions (`connect-pg-simple`). Protect mutations only (`POST /sync/trigger`, `POST /imports/upload`). All GET endpoints remain public. |
-
----
-
-## Phase 4 — UI/UX Polish
-
-| Status | ID | Feature | Description |
-|--------|-----|---------|-------------|
-| ⬜ | P4-1 | **Responsive layout** | Sidebar collapses to icon rail on <1024px viewports. Tables scroll horizontally on mobile. Tailwind breakpoint audit across all pages. |
-| ⬜ | P4-2 | **Trend / time-series charts** | Line charts showing CVE count, breach count, and threat intel volume over time (7d / 30d / 90d). Recharts `LineChart` — fits existing charting library. Needs `created_at`-grouped queries on backend. |
-| ⬜ | P4-3 | **Saved filter presets** | Users can name and save a filter config (severity + source + date range) to `localStorage`. A "Presets" dropdown in `FilterBar` loads them back. Pure frontend change. |
-| ⬜ | P4-4 | **Global full-text search** | Extend existing TopBar search to query across vulnerabilities, breaches, and threat intel simultaneously. Backend: one new `/search?q=` endpoint using `ILIKE` across key columns. Frontend: results grouped by type in a dropdown. |
-| ⬜ | P4-5 | **Detail pages (not modals)** | Replace `VulnDetail` and `BreachDetail` modals with dedicated routed pages (`/vulnerabilities/:id`, `/breaches/:id`). Enables deep-linking, browser back-button support, and more content space. |
-| ⬜ | P4-6 | **Empty states & onboarding** | Illustrated empty states for each page when no data exists. "Run your first sync" CTA card on Dashboard when all tables are empty. |
-| ⬜ | P4-7 | **Accessibility pass** | ARIA labels on interactive elements, focus rings, colour contrast audit (WCAG AA). Keyboard navigation for table rows and modal dialogs. |
+**Current status**: Phase 4 complete (UI/UX polish).
 
 ---
 
@@ -58,6 +33,17 @@ This document tracks planned features and improvements. Items are grouped by pha
 
 | Phase | ID | Feature |
 |-------|----|---------|
+| 4 | P4-1 | Responsive layout — sidebar collapses to icon rail on <1024px, mobile hamburger menu, table horizontal scroll |
+| 4 | P4-2 | Trend / time-series charts — Recharts LineChart with 7d/30d/90d range selector on Dashboard |
+| 4 | P4-3 | Saved filter presets — localStorage-based preset save/load with Presets dropdown in FilterBar |
+| 4 | P4-4 | Global full-text search — TopBar search across vulnerabilities, breaches, and threat intel with grouped dropdown |
+| 4 | P4-5 | Detail pages — replaced VulnDetail/BreachDetail modals with routed pages (`/vulnerabilities/:cveId`, `/breaches/:id`) |
+| 4 | P4-6 | Empty states & onboarding — EmptyState component, "Run your first sync" CTA card on Dashboard |
+| 4 | P4-7 | Accessibility pass — ARIA labels, focus-visible rings, skip link, scope on table headers, semantic landmarks |
+| 3 | P3-1 | Test framework — jest + supertest for backend, vitest + @testing-library/react for frontend |
+| 3 | P3-2 | GitHub Actions CI — ci.yml: lint + test + build on PRs, release.yml: GHCR images on tags |
+| 3 | P3-3 | Structured logging + metrics — pino logger, Prometheus /metrics endpoint via prom-client |
+| 3 | P3-4 | Optional authentication — Passport.js local strategy with Postgres-backed sessions |
 | 2 | P2-1 | Settings page with sync status, manual triggers, API key indicators |
 | 2 | P2-2 | MITRE ATT&CK weekly sync, `attack_techniques` table, `/attack` page with TTP grouping |
 | 2 | P2-3 | OSV (osv.dev) daily sync — npm, PyPI, Go, Maven ecosystems |

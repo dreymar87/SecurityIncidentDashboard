@@ -24,7 +24,12 @@ const KEY_LABELS: Record<string, string> = {
   GITHUB_TOKEN: 'GitHub Token',
 };
 
-export function Settings() {
+interface PageProps {
+  onMobileMenuToggle?: () => void;
+  isMobile?: boolean;
+}
+
+export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
   const { data: settings, isLoading } = useSettings();
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState<Record<string, boolean>>({});
@@ -44,7 +49,7 @@ export function Settings() {
 
   return (
     <>
-      <TopBar title="Settings" />
+      <TopBar title="Settings" onMobileMenuToggle={onMobileMenuToggle} isMobile={isMobile} />
       <div className="p-6 space-y-6 max-w-4xl">
         {/* Sync Sources */}
         <div>

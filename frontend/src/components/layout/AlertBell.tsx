@@ -40,6 +40,8 @@ export function AlertBell() {
       <button
         onClick={() => setOpen(!open)}
         className="p-1.5 rounded-lg transition-colors hover:bg-gray-800 relative"
+        aria-label={count > 0 ? `Alerts (${count} unread)` : 'Alerts'}
+        aria-expanded={open}
       >
         <Bell size={15} className="text-gray-400" />
         {count > 0 && (

@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { useBreaches } from '../api/hooks';
-import { Breach } from '../api/client';
 import { FilterBar } from '../components/filters/FilterBar';
 import { BreachTable } from '../components/breaches/BreachTable';
-import { BreachDetail } from '../components/breaches/BreachDetail';
 import { SkeletonTable } from '../components/SkeletonLoader';
 import { TopBar } from '../components/layout/TopBar';
 
-export function Breaches() {
+interface PageProps {
+  onMobileMenuToggle?: () => void;
+  isMobile?: boolean;
+}
+
+export function Breaches({ onMobileMenuToggle, isMobile }: PageProps) {
   const [filters, setFilters] = useState<Record<string, string | undefined>>({});
   const [page, setPage] = useState(1);
-  const [selectedBreach, setSelectedBreach] = useState<Breach | null>(null);
 
   const { data, isLoading } = useBreaches({ ...filters, page, limit: 50 });
 
@@ -21,7 +23,7 @@ export function Breaches() {
 
   return (
     <div>
-      <TopBar title="Data Breaches" />
+      <TopBar title="Data Breaches" onMobileMenuToggle={onMobileMenuToggle} isMobile={isMobile} />
       <div className="p-6 space-y-4">
         <FilterBar
           mode="breaches"
@@ -36,15 +38,11 @@ export function Breaches() {
             page={data.page}
             pages={data.pages}
             onPageChange={setPage}
-            onSelect={setSelectedBreach}
             loading={isLoading}
           />
         )}
         {!data && isLoading && <SkeletonTable rows={10} cols={6} />}
       </div>
-      {selectedBreach && (
-        <BreachDetail breach={selectedBreach} onClose={() => setSelectedBreach(null)} />
-      )}
     </div>
   );
 }
