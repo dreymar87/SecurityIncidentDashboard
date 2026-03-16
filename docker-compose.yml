@@ -37,6 +37,8 @@ services:
       HIBP_API_KEY: ${HIBP_API_KEY:-}
       GREYNOISE_API_KEY: ${GREYNOISE_API_KEY:-}
       SHODAN_API_KEY: ${SHODAN_API_KEY:-}
+      ENABLE_AUTH: ${ENABLE_AUTH:-false}
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
     ports:
       - '4000:4000'
     depends_on:

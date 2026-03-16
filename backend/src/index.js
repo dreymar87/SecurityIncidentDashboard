@@ -6,8 +6,12 @@ const pinoHttp = require('pino-http');
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 
+const session = require('express-session');
+const PgSession = require('connect-pg-simple')(session);
+
 const logger = require('./utils/logger');
 const { client, httpMetricsMiddleware } = require('./utils/metrics');
+const { passport } = require('./utils/auth');
 
 // ── Startup guards ────────────────────────────────────────────────────────────
 
@@ -71,14 +75,38 @@ const uploadLimiter = rateLimit({
 });
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' }));
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
 app.use(pinoHttp({ logger }));
 app.use(express.json());
 app.use(httpMetricsMiddleware);
 
+if (process.env.ENABLE_AUTH === 'true') {
+  if (!process.env.SESSION_SECRET) {
+    logger.warn('[Auth] SESSION_SECRET not set — using insecure default');
+  }
+  app.use(session({
+    store: new PgSession({
+      conString: `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME}`,
+      createTableIfMissing: true,
+    }),
+    secret: process.env.SESSION_SECRET || 'change-me-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+  }));
+  app.use(passport.initialize());
+  app.use(passport.session());
+}
+
 app.use('/api', generalLimiter);
 app.use('/api/sync/trigger', syncLimiter);
 app.use('/api/imports/upload', uploadLimiter);
+
+app.use('/auth', require('./routes/auth'));
 
 app.use('/api/vulnerabilities', vulnerabilitiesRouter);
 app.use('/api/breaches', breachesRouter);
