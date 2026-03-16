@@ -2,31 +2,7 @@
 
 This document tracks planned features and improvements. Items are grouped by phase and ordered by suggested implementation sequence within each phase.
 
-**Current status**: Phase 1 complete (stability hardening + visual polish).
-
----
-
-## Phase 2 — Feature Expansion
-
-### New Data Sources
-
-All sources in this phase are free with no paid API keys required.
-
-| Status | ID | Feature | Description |
-|--------|-----|---------|-------------|
-| ⬜ | P2-3 | **OSV (osv.dev)** | Open Source Vulnerability DB — upserts into the existing `vulnerabilities` table with `source='osv'`. No API key. Covers npm, PyPI, Go, Maven gaps that NVD misses. Daily cron. |
-| ⬜ | P2-5 | **Exploit-DB** | Daily CSV download from exploit-db.com. Enrichment only — sets `exploit_available=true` on existing CVE rows. No new table needed. |
-| ⬜ | P2-4 | **GitHub Advisory DB** | GraphQL API, optional `GITHUB_TOKEN` (free). Maps GHSA IDs into the `vulnerabilities` table. `MODERATE` severity maps to `MEDIUM`. 6-hour cron. |
-| ⬜ | P2-2 | **MITRE ATT&CK** | Weekly sync from `attack-stix-data.mitre.org`. New `attack_techniques` table. New `/attack` page displaying TTPs grouped by tactic. |
-
-### UI Features
-
-| Status | ID | Feature | Description |
-|--------|-----|---------|-------------|
-| ⬜ | P2-1 | **Settings page** | Wire up the existing Settings icon in the sidebar (currently has no route). Shows sync status per source, manual trigger buttons, and which API keys are configured (boolean presence only — never values). |
-| ⬜ | P2-6 | **Alert system** | New `alerts` table. Post-sync hook generates alerts for new CRITICAL or CISA KEV records. Bell icon in TopBar with unread count badge and dropdown panel. |
-| ⬜ | P2-7 | **SSE for import status** | Replace 1500ms polling in `ImportWizard` with a `GET /api/imports/:jobId/stream` Server-Sent Events endpoint and native `EventSource` hook. |
-| ⬜ | P2-8 | **Light mode toggle** | CSS-only `data-theme` attribute toggle in TopBar, persisted to `localStorage`. No component changes beyond `TopBar.tsx` and `index.css`. |
+**Current status**: Phase 2 complete (feature expansion).
 
 ---
 
@@ -45,6 +21,14 @@ All sources in this phase are free with no paid API keys required.
 
 | Phase | ID | Feature |
 |-------|----|---------|
+| 2 | P2-1 | Settings page with sync status, manual triggers, API key indicators |
+| 2 | P2-2 | MITRE ATT&CK weekly sync, `attack_techniques` table, `/attack` page with TTP grouping |
+| 2 | P2-3 | OSV (osv.dev) daily sync — npm, PyPI, Go, Maven ecosystems |
+| 2 | P2-4 | GitHub Advisory DB sync via GraphQL, optional `GITHUB_TOKEN`, 6-hour cron |
+| 2 | P2-5 | Exploit-DB daily CSV enrichment — sets `exploit_available=true` on matching CVEs |
+| 2 | P2-6 | Alert system with `alerts` table, post-sync hooks, bell icon with unread count |
+| 2 | P2-7 | SSE for import status replacing polling with `EventSource` |
+| 2 | P2-8 | Light mode toggle via CSS variables and `data-theme` attribute |
 | 1 | P1-1 | Ensure `/tmp/sid-imports/` exists at startup |
 | 1 | P1-2 | Validate required env vars at startup |
 | 1 | P1-3 | Input validation on all filter params |

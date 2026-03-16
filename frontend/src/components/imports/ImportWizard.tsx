@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, CheckCircle, XCircle, Loader, FileText } from 'lucide-react';
 import { api } from '../../api/client';
@@ -24,6 +24,15 @@ export function ImportWizard() {
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  // Cleanup EventSource on unmount
+  useEffect(() => {
+    return () => {
+      eventSourceRef.current?.close();
+    };
+  }, []);
+
   const onDrop = useCallback(async (files: File[]) => {
     const file = files[0];
     if (!file) return;
@@ -43,20 +52,29 @@ export function ImportWizard() {
 
       const jobId = data.jobId;
 
-      // Poll for status
-      const poll = async () => {
-        const { data: status } = await api.get(`/imports/${jobId}/status`);
+      // Use SSE for real-time status updates
+      eventSourceRef.current?.close();
+      const es = new EventSource(`/api/imports/${jobId}/stream`);
+      eventSourceRef.current = es;
+
+      es.onmessage = (event) => {
+        const status = JSON.parse(event.data) as JobStatus;
         setJobStatus(status);
-        if (status.status === 'processing' || status.status === 'pending') {
-          setTimeout(poll, 1500);
-        } else {
+        if (status.status === 'done' || status.status === 'failed') {
+          es.close();
+          eventSourceRef.current = null;
           setUploading(false);
           if (status.status === 'done') {
             queryClient.invalidateQueries();
           }
         }
       };
-      await poll();
+
+      es.onerror = () => {
+        es.close();
+        eventSourceRef.current = null;
+        setUploading(false);
+      };
     } catch (err: unknown) {
       setUploading(false);
       const msg = err instanceof Error ? err.message : 'Upload failed';

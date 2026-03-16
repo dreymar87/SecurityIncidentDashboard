@@ -1,7 +1,7 @@
 import { Search, X } from 'lucide-react';
 
 const SEVERITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'NONE'];
-const SOURCES_VULN = ['nvd', 'cisa', 'imported'];
+const SOURCES_VULN = ['nvd', 'cisa', 'osv', 'ghsa', 'imported'];
 const SOURCES_BREACH = ['hibp', 'imported'];
 
 interface FilterBarProps {

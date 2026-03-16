@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Activity
+  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Activity, Crosshair
 } from 'lucide-react';
 
 const navItems = [
@@ -8,7 +8,9 @@ const navItems = [
   { to: '/vulnerabilities', icon: Shield, label: 'Vulnerabilities' },
   { to: '/breaches', icon: AlertTriangle, label: 'Data Breaches' },
   { to: '/threat-intel', icon: Radar, label: 'Threat Intel' },
+  { to: '/attack', icon: Crosshair, label: 'ATT&CK' },
   { to: '/import', icon: Upload, label: 'Import Data' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function Sidebar() {

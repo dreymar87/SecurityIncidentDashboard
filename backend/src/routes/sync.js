@@ -5,12 +5,20 @@ const { syncCisaKev } = require('../services/cisa.service');
 const { syncNvd } = require('../services/nvd.service');
 const { syncHibpBreaches } = require('../services/hibp.service');
 const { syncGreyNoise } = require('../services/greynoise.service');
+const { syncOsv } = require('../services/osv.service');
+const { syncExploitDb } = require('../services/exploitdb.service');
+const { syncGhsa } = require('../services/ghsa.service');
+const { syncMitre } = require('../services/mitre.service');
 
 const syncers = {
   cisa: syncCisaKev,
   nvd: () => syncNvd({ daysBack: 7 }),
   hibp: syncHibpBreaches,
   greynoise: syncGreyNoise,
+  osv: syncOsv,
+  exploitdb: syncExploitDb,
+  ghsa: syncGhsa,
+  mitre: syncMitre,
 };
 
 // GET /api/sync/status
