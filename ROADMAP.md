@@ -17,6 +17,43 @@ This document tracks planned features and improvements. Items are grouped by pha
 
 ---
 
+## Phase 4 — UI/UX Polish
+
+| Status | ID | Feature | Description |
+|--------|-----|---------|-------------|
+| ⬜ | P4-1 | **Responsive layout** | Sidebar collapses to icon rail on <1024px viewports. Tables scroll horizontally on mobile. Tailwind breakpoint audit across all pages. |
+| ⬜ | P4-2 | **Trend / time-series charts** | Line charts showing CVE count, breach count, and threat intel volume over time (7d / 30d / 90d). Recharts `LineChart` — fits existing charting library. Needs `created_at`-grouped queries on backend. |
+| ⬜ | P4-3 | **Saved filter presets** | Users can name and save a filter config (severity + source + date range) to `localStorage`. A "Presets" dropdown in `FilterBar` loads them back. Pure frontend change. |
+| ⬜ | P4-4 | **Global full-text search** | Extend existing TopBar search to query across vulnerabilities, breaches, and threat intel simultaneously. Backend: one new `/search?q=` endpoint using `ILIKE` across key columns. Frontend: results grouped by type in a dropdown. |
+| ⬜ | P4-5 | **Detail pages (not modals)** | Replace `VulnDetail` and `BreachDetail` modals with dedicated routed pages (`/vulnerabilities/:id`, `/breaches/:id`). Enables deep-linking, browser back-button support, and more content space. |
+| ⬜ | P4-6 | **Empty states & onboarding** | Illustrated empty states for each page when no data exists. "Run your first sync" CTA card on Dashboard when all tables are empty. |
+| ⬜ | P4-7 | **Accessibility pass** | ARIA labels on interactive elements, focus rings, colour contrast audit (WCAG AA). Keyboard navigation for table rows and modal dialogs. |
+
+---
+
+## Phase 5 — Multi-User Support
+
+| Status | ID | Feature | Description |
+|--------|-----|---------|-------------|
+| ⬜ | P5-1 | **Multiple user accounts** | Extend Passport.js local strategy (P3-4) to support multiple users in a `users` table. Registration via CLI script or admin-invite flow — no public self-signup. |
+| ⬜ | P5-2 | **User management page** | New `/admin/users` page to add/remove users and reset passwords. Backend: `GET/POST/DELETE /users` routes. |
+| ⬜ | P5-3 | **Per-user alert preferences** | Each user configures which alert severities trigger their in-app bell. Stored in a `user_preferences` JSON column. |
+| ⬜ | P5-4 | **Audit log** | Track who triggered manual syncs and imports. New `audit_log` table. Recent-actions panel on Settings page with user + timestamp. |
+
+---
+
+## Phase 6 — Feature Depth
+
+| Status | ID | Feature | Description |
+|--------|-----|---------|-------------|
+| ⬜ | P6-1 | **Remediation tracking** | Add `status` (open / in-progress / resolved / accepted-risk) and `assigned_to` fields to vulnerabilities. Filter by status. Lightweight triage workflow without a full ticketing system. |
+| ⬜ | P6-2 | **CVE notes / comments** | `vulnerability_notes` table (vuln_id, user, note, timestamp). Threaded team notes on each CVE detail page. |
+| ⬜ | P6-3 | **Watchlists** | Star/watch specific CVEs or save a filter preset as a watchlist. Bell alerts optionally scoped to watched items. |
+| ⬜ | P6-4 | **PDF / print report** | "Export Report" button on Dashboard generates a print-friendly summary of key metrics, top CVEs, and recent breaches. CSS `@media print` approach. |
+| ⬜ | P6-5 | **Risk scoring** | Custom risk score per CVE = weighted blend of CVSS base score + exploit availability + breach correlation. Configurable weights in Settings. "Risk Score" sortable column added to `VulnTable`. |
+
+---
+
 ## Completed
 
 | Phase | ID | Feature |
