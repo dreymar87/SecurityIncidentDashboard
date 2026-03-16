@@ -4,6 +4,8 @@ const db = require('../db');
 const { Parser } = require('json2csv');
 const logger = require('../utils/logger');
 
+const SORT_WHITELIST = new Set(['organization', 'domain', 'country', 'breach_date', 'records_affected', 'source']);
+
 function sanitizePagination(rawPage, rawLimit) {
   const page = Math.max(1, parseInt(rawPage) || 1);
   const limit = Math.min(200, Math.max(1, parseInt(rawLimit) || 50));
@@ -16,6 +18,8 @@ router.get('/', async (req, res) => {
     const { country, source, dateFrom, dateTo, type, export: exportFormat } = req.query;
     const q = req.query.q ? String(req.query.q).slice(0, 200) : undefined;
     const { page, limit } = sanitizePagination(req.query.page, req.query.limit);
+    const sort = SORT_WHITELIST.has(req.query.sort) ? req.query.sort : 'breach_date';
+    const order = req.query.order === 'asc' ? 'asc' : 'desc';
 
     if (dateFrom && isNaN(new Date(dateFrom).getTime())) {
       return res.status(400).json({ error: 'Invalid dateFrom value' });
@@ -46,7 +50,7 @@ router.get('/', async (req, res) => {
       const rows = await query
         .select('organization', 'domain', 'country', 'breach_date',
           'records_affected', 'breach_types', 'source', 'is_verified')
-        .orderBy('breach_date', 'desc');
+        .orderBy(sort, order);
       const parser = new Parser();
       const csv = parser.parse(rows);
       res.set('Content-Type', 'text/csv');
@@ -61,7 +65,7 @@ router.get('/', async (req, res) => {
         .select('id', 'source', 'organization', 'domain', 'country',
           'breach_date', 'records_affected', 'breach_types',
           'is_verified', 'is_sensitive', 'created_at')
-        .orderBy('breach_date', 'desc')
+        .orderBy(sort, order)
         .limit(limit)
         .offset(offset),
     ]);

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronLeft, ChevronRight, ExternalLink, CheckCircle, Lock, DatabaseZap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink, CheckCircle, Lock, DatabaseZap } from 'lucide-react';
 import { Breach } from '../../api/client';
 import { EmptyState } from '../EmptyState';
 
@@ -11,6 +11,16 @@ interface BreachTableProps {
   pages: number;
   onPageChange: (page: number) => void;
   loading?: boolean;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
+}
+
+function SortIcon({ field, sort, order }: { field: string; sort?: string; order?: 'asc' | 'desc' }) {
+  if (sort === field) {
+    return order === 'asc' ? <ChevronUp className="w-3 h-3 shrink-0" /> : <ChevronDown className="w-3 h-3 shrink-0" />;
+  }
+  return <ChevronsUpDown className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-50" />;
 }
 
 function formatRecords(n: number | null) {
@@ -21,7 +31,7 @@ function formatRecords(n: number | null) {
   return n.toLocaleString();
 }
 
-export function BreachTable({ data, total, page, pages, onPageChange, loading }: BreachTableProps) {
+export function BreachTable({ data, total, page, pages, onPageChange, loading, sort, order, onSort }: BreachTableProps) {
   const navigate = useNavigate();
 
   return (
@@ -42,11 +52,17 @@ export function BreachTable({ data, total, page, pages, onPageChange, loading }:
         <table className="w-full min-w-[750px]">
           <thead>
             <tr className="border-b border-gray-800">
-              <th scope="col" className="table-header px-4 py-3 text-left">Organization</th>
+              <th scope="col" className="table-header px-4 py-3 text-left cursor-pointer select-none group" onClick={() => onSort?.('organization')}>
+                <span className="flex items-center gap-1">Organization <SortIcon field="organization" sort={sort} order={order} /></span>
+              </th>
               <th scope="col" className="table-header px-4 py-3 text-left">Domain</th>
               <th scope="col" className="table-header px-4 py-3 text-left">Country</th>
-              <th scope="col" className="table-header px-4 py-3 text-left">Date</th>
-              <th scope="col" className="table-header px-4 py-3 text-right">Records</th>
+              <th scope="col" className="table-header px-4 py-3 text-left cursor-pointer select-none group" onClick={() => onSort?.('breach_date')}>
+                <span className="flex items-center gap-1">Date <SortIcon field="breach_date" sort={sort} order={order} /></span>
+              </th>
+              <th scope="col" className="table-header px-4 py-3 text-right cursor-pointer select-none group" onClick={() => onSort?.('records_affected')}>
+                <span className="flex items-center justify-end gap-1">Records <SortIcon field="records_affected" sort={sort} order={order} /></span>
+              </th>
               <th scope="col" className="table-header px-4 py-3 text-left">Data Types</th>
               <th scope="col" className="table-header px-4 py-3 text-left">Source</th>
               <th scope="col" className="table-header px-4 py-3 text-left">Flags</th>

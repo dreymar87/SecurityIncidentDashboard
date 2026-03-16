@@ -77,6 +77,14 @@ const uploadLimiter = rateLimit({
   message: { error: 'Upload rate limit exceeded. Please wait before uploading again.' },
 });
 
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
+});
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
 app.use(pinoHttp({ logger }));
@@ -112,6 +120,7 @@ if (process.env.ENABLE_AUTH === 'true') {
 app.use('/api', generalLimiter);
 app.use('/api/sync/trigger', syncLimiter);
 app.use('/api/imports/upload', uploadLimiter);
+app.use('/auth/login', loginLimiter);
 
 app.use('/auth', require('./routes/auth'));
 

@@ -13,15 +13,29 @@ interface PageProps {
 export function Vulnerabilities({ onMobileMenuToggle, isMobile }: PageProps) {
   const [filters, setFilters] = useState<Record<string, string | boolean | undefined>>({});
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState('published_at');
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
 
   const { data, isLoading } = useVulnerabilities({
     ...filters as Record<string, string>,
     page,
     limit: 50,
+    sort,
+    order,
   });
 
   function handleFilterChange(key: string, value: string | boolean | undefined) {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(1);
+  }
+
+  function handleSort(field: string) {
+    if (field === sort) {
+      setOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSort(field);
+      setOrder('desc');
+    }
     setPage(1);
   }
 
@@ -43,6 +57,9 @@ export function Vulnerabilities({ onMobileMenuToggle, isMobile }: PageProps) {
             pages={data.pages}
             onPageChange={setPage}
             loading={isLoading}
+            sort={sort}
+            order={order}
+            onSort={handleSort}
           />
         )}
         {!data && isLoading && <SkeletonTable rows={10} cols={7} />}

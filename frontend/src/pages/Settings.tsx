@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { TopBar } from '../components/layout/TopBar';
-import { useSettings, useCurrentUser, useUserPreferences, useUpdatePreferences, useAuditLog } from '../api/hooks';
+import { useSettings, useCurrentUser, useUserPreferences, useUpdatePreferences, useAuditLog, useChangePassword, useUpdateProfile } from '../api/hooks';
 import { api } from '../api/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { RefreshCw, CheckCircle, XCircle, Clock, Key, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, Clock, Key, Bell, ChevronLeft, ChevronRight, User, Lock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -51,10 +51,17 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
   const { data: currentUser } = useCurrentUser();
   const { data: preferences } = useUserPreferences();
   const updatePreferences = useUpdatePreferences();
+  const changePassword = useChangePassword();
+  const updateProfile = useUpdateProfile();
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState<Record<string, boolean>>({});
   const [auditPage, setAuditPage] = useState(1);
   const { data: auditLog } = useAuditLog(auditPage);
+
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [pwMsg, setPwMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -73,6 +80,35 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
 
   function handleThresholdChange(value: string) {
     updatePreferences.mutate({ alertThreshold: value as 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'ALL' });
+  }
+
+  async function handleProfileSave(e: React.FormEvent) {
+    e.preventDefault();
+    setProfileMsg(null);
+    try {
+      await updateProfile.mutateAsync({ email: profileEmail });
+      setProfileMsg({ type: 'success', text: 'Profile updated successfully.' });
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to update profile';
+      setProfileMsg({ type: 'error', text: msg });
+    }
+  }
+
+  async function handlePasswordChange(e: React.FormEvent) {
+    e.preventDefault();
+    setPwMsg(null);
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      setPwMsg({ type: 'error', text: 'New passwords do not match.' });
+      return;
+    }
+    try {
+      await changePassword.mutateAsync({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword });
+      setPwMsg({ type: 'success', text: 'Password changed successfully.' });
+      setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to change password';
+      setPwMsg({ type: 'error', text: msg });
+    }
   }
 
   return (
@@ -189,6 +225,100 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
               {updatePreferences.isPending && (
                 <p className="text-xs text-sky-400 mt-2">Saving...</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Profile */}
+        {currentUser && (
+          <div>
+            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+              <User size={14} />
+              Profile
+            </h3>
+            <div className="card p-4">
+              {profileMsg && (
+                <div className={`mb-3 text-xs px-3 py-2 rounded-lg border ${profileMsg.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                  {profileMsg.text}
+                </div>
+              )}
+              <form onSubmit={handleProfileSave} className="flex flex-col gap-3">
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Username</label>
+                  <input className="input w-full text-sm" value={currentUser.username} disabled />
+                </div>
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Email address</label>
+                  <input
+                    type="email"
+                    className="input w-full text-sm"
+                    placeholder="your@email.com"
+                    value={profileEmail || currentUser.email || ''}
+                    onChange={(e) => setProfileEmail(e.target.value)}
+                  />
+                </div>
+                <button type="submit" disabled={updateProfile.isPending} className="btn-primary text-xs py-1.5 self-start">
+                  {updateProfile.isPending ? 'Saving...' : 'Save Profile'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Change Password */}
+        {currentUser && (
+          <div>
+            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+              <Lock size={14} />
+              Change Password
+            </h3>
+            <div className="card p-4">
+              {pwMsg && (
+                <div className={`mb-3 text-xs px-3 py-2 rounded-lg border ${pwMsg.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                  {pwMsg.text}
+                </div>
+              )}
+              <form onSubmit={handlePasswordChange} className="flex flex-col gap-3">
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Current password</label>
+                  <input
+                    type="password"
+                    className="input w-full text-sm"
+                    value={pwForm.currentPassword}
+                    onChange={(e) => setPwForm((f) => ({ ...f, currentPassword: e.target.value }))}
+                    required
+                    autoComplete="current-password"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>New password</label>
+                  <input
+                    type="password"
+                    className="input w-full text-sm"
+                    placeholder="Min 8 chars, include a number or symbol"
+                    value={pwForm.newPassword}
+                    onChange={(e) => setPwForm((f) => ({ ...f, newPassword: e.target.value }))}
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Confirm new password</label>
+                  <input
+                    type="password"
+                    className="input w-full text-sm"
+                    value={pwForm.confirmPassword}
+                    onChange={(e) => setPwForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <button type="submit" disabled={changePassword.isPending} className="btn-primary text-xs py-1.5 self-start">
+                  {changePassword.isPending ? 'Changing...' : 'Change Password'}
+                </button>
+              </form>
             </div>
           </div>
         )}

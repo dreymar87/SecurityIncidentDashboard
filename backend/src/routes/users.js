@@ -10,6 +10,12 @@ const { logAudit } = require('../utils/auditLog');
 const VALID_ROLES = ['admin', 'viewer'];
 const SEVERITY_LEVELS = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'ALL'];
 
+function validatePassword(password) {
+  if (!password || password.length < 8) return 'Password must be at least 8 characters.';
+  if (!/[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) return 'Password must contain at least one number or special character.';
+  return null;
+}
+
 // ── Admin user management ────────────────────────────────────────────────────
 
 // GET /api/users — list all users (admin only)
@@ -36,9 +42,8 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     if (username.length < 3 || username.length > 100) {
       return res.status(400).json({ error: 'Username must be 3-100 characters' });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
+    const pwError = validatePassword(password);
+    if (pwError) return res.status(400).json({ error: pwError });
     if (role && !VALID_ROLES.includes(role)) {
       return res.status(400).json({ error: `Invalid role. Valid: ${VALID_ROLES.join(', ')}` });
     }
@@ -97,9 +102,8 @@ router.put('/:id/reset-password', requireAuth, requireAdmin, async (req, res) =>
     if (isNaN(userId)) return res.status(400).json({ error: 'Invalid user ID' });
 
     const { password } = req.body;
-    if (!password || password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
+    const pwError = validatePassword(password);
+    if (pwError) return res.status(400).json({ error: pwError });
 
     const user = await db('users').where('id', userId).first();
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -159,6 +163,52 @@ router.get('/me/preferences', requireAuth, async (req, res) => {
   } catch (err) {
     logger.error({ err }, 'Failed to fetch preferences');
     res.status(500).json({ error: 'Failed to fetch preferences' });
+  }
+});
+
+// PUT /api/users/me/password — change own password
+router.put('/me/password', requireAuth, async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'currentPassword and newPassword are required' });
+    }
+
+    const user = await db('users').where('id', req.user.id).first();
+    const valid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!valid) return res.status(400).json({ error: 'Current password is incorrect' });
+
+    const pwError = validatePassword(newPassword);
+    if (pwError) return res.status(400).json({ error: pwError });
+
+    const hash = await bcrypt.hash(newPassword, 12);
+    await db('users').where('id', req.user.id).update({ password_hash: hash });
+    await logAudit({ req, action: 'password_change', resourceType: 'user', resourceId: String(req.user.id), details: { username: user.username } });
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    logger.error({ err }, 'Failed to change password');
+    res.status(500).json({ error: 'Failed to change password' });
+  }
+});
+
+// PUT /api/users/me/profile — update own profile
+router.put('/me/profile', requireAuth, async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+
+    const { email } = req.body;
+    const updates = { email: email || null };
+
+    await db('users').where('id', req.user.id).update(updates);
+    await logAudit({ req, action: 'profile_update', resourceType: 'user', resourceId: String(req.user.id), details: { email: email || null } });
+
+    res.json({ message: 'Profile updated successfully' });
+  } catch (err) {
+    logger.error({ err }, 'Failed to update profile');
+    res.status(500).json({ error: 'Failed to update profile' });
   }
 });
 

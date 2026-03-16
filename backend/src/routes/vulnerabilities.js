@@ -5,6 +5,7 @@ const { Parser } = require('json2csv');
 const logger = require('../utils/logger');
 
 const VALID_SEVERITIES = new Set(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'NONE']);
+const SORT_WHITELIST = new Set(['cve_id', 'severity', 'cvss_score', 'published_at', 'source']);
 
 function sanitizePagination(rawPage, rawLimit) {
   const page = Math.max(1, parseInt(rawPage) || 1);
@@ -21,6 +22,8 @@ router.get('/', async (req, res) => {
     } = req.query;
     const q = req.query.q ? String(req.query.q).slice(0, 200) : undefined;
     const { page, limit } = sanitizePagination(req.query.page, req.query.limit);
+    const sort = SORT_WHITELIST.has(req.query.sort) ? req.query.sort : 'published_at';
+    const order = req.query.order === 'asc' ? 'asc' : 'desc';
 
     if (dateFrom && isNaN(new Date(dateFrom).getTime())) {
       return res.status(400).json({ error: 'Invalid dateFrom value' });
@@ -58,7 +61,7 @@ router.get('/', async (req, res) => {
       const rows = await query
         .select('cve_id', 'source', 'title', 'severity', 'cvss_score', 'cisa_kev',
           'exploit_available', 'patch_available', 'published_at')
-        .orderBy('published_at', 'desc');
+        .orderBy(sort, order);
       const parser = new Parser();
       const csv = parser.parse(rows);
       res.set('Content-Type', 'text/csv');
@@ -74,7 +77,7 @@ router.get('/', async (req, res) => {
         .select('id', 'cve_id', 'source', 'title', 'severity', 'cvss_score',
           'cisa_kev', 'exploit_available', 'patch_available', 'countries',
           'affected_products', 'published_at', 'last_modified')
-        .orderBy('published_at', 'desc')
+        .orderBy(sort, order)
         .limit(limit)
         .offset(offset),
     ]);
