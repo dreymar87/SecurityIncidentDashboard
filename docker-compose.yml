@@ -41,6 +41,7 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     ports:
       - '4000:4000'
     depends_on:

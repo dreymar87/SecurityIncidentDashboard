@@ -100,7 +100,7 @@ if (process.env.ENABLE_AUTH === 'true') {
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.COOKIE_SECURE === 'true',
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
     },
