@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, DashboardStats, TrendData, SearchResults, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert, User, UserPreferences, AuditLogEntry } from './client';
+import { api, authApi, DashboardStats, TrendData, SearchResults, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert, User, UserPreferences, AuditLogEntry } from './client';
 
 export function useStats() {
   return useQuery<DashboardStats>({
@@ -128,9 +128,26 @@ export function useUnreadAlertCount() {
 export function useCurrentUser() {
   return useQuery<User | null>({
     queryKey: ['current-user'],
-    queryFn: () => api.get('/auth/me').then((r) => r.data).catch(() => null),
+    queryFn: () => authApi.get('/auth/me').then((r) => r.data).catch(() => null),
     retry: false,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useLogin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ username, password }: { username: string; password: string }) =>
+      authApi.post('/auth/login', { username, password }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['current-user'] }),
+  });
+}
+
+export function useLogout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => authApi.post('/auth/logout').then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['current-user'] }),
   });
 }
 

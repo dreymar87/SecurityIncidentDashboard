@@ -84,8 +84,12 @@ app.use(express.json());
 app.use(httpMetricsMiddleware);
 
 if (process.env.ENABLE_AUTH === 'true') {
-  if (!process.env.SESSION_SECRET) {
-    logger.warn('[Auth] SESSION_SECRET not set — using insecure default');
+  const insecureSecret = !process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'change-me-in-production';
+  if (insecureSecret && process.env.NODE_ENV === 'production') {
+    logger.fatal('[Auth] SESSION_SECRET must be set to a strong random value in production. Generate one with: openssl rand -hex 32');
+    process.exit(1);
+  } else if (insecureSecret) {
+    logger.warn('[Auth] SESSION_SECRET not set — using insecure default (never do this in production)');
   }
   app.use(session({
     store: new PgSession({

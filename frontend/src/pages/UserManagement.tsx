@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { TopBar } from '../components/layout/TopBar';
 import { useUsers, useCreateUser, useDeleteUser, useResetPassword, useCurrentUser } from '../api/hooks';
 import { User } from '../api/client';
@@ -25,7 +26,23 @@ export function UserManagement({ onMobileMenuToggle, isMobile }: PageProps) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  if (currentUser && currentUser.role !== 'admin') {
+  if (!currentUser) {
+    return (
+      <>
+        <TopBar title="User Management" onMobileMenuToggle={onMobileMenuToggle} isMobile={isMobile} />
+        <div className="p-6">
+          <div className="card p-8 text-center space-y-3">
+            <p style={{ color: 'var(--color-text-muted)' }}>You must be logged in as an admin to view this page.</p>
+            <Link to="/login" className="text-sm text-sky-400 hover:text-sky-300 transition-colors">
+              Go to login
+            </Link>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (currentUser.role !== 'admin') {
     return (
       <>
         <TopBar title="User Management" onMobileMenuToggle={onMobileMenuToggle} isMobile={isMobile} />

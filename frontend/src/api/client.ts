@@ -5,6 +5,13 @@ export const api = axios.create({
   timeout: 30000,
 });
 
+// Separate instance for /auth/* routes (not under /api prefix)
+export const authApi = axios.create({
+  baseURL: '/',
+  withCredentials: true,
+  timeout: 30000,
+});
+
 export interface PaginatedResponse<T> {
   total: number;
   page: number;
