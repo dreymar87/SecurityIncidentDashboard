@@ -1,5 +1,6 @@
 const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
+const { generateAlerts } = require('../utils/alertGenerator');
 
 const CISA_KEV_URL =
   'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
@@ -7,6 +8,7 @@ const CISA_KEV_URL =
 async function syncCisaKev() {
   const startTime = Date.now();
   let recordsSynced = 0;
+  const syncedRecords = [];
 
   try {
     const { data } = await axiosWithRetry({ url: CISA_KEV_URL, timeout: 30000 });
@@ -42,6 +44,7 @@ async function syncCisaKev() {
           title: db.raw('COALESCE(vulnerabilities.title, EXCLUDED.title)'),
         });
 
+      syncedRecords.push(record);
       recordsSynced++;
     }
 
@@ -51,6 +54,7 @@ async function syncCisaKev() {
       records_synced: recordsSynced,
     });
 
+    await generateAlerts('cisa', syncedRecords).catch((e) => console.error('[CISA] Alert generation failed:', e.message));
     console.log(`[CISA] Synced ${recordsSynced} KEV entries in ${Date.now() - startTime}ms`);
     return { success: true, recordsSynced };
   } catch (err) {

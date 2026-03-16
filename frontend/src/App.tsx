@@ -5,6 +5,8 @@ import { Vulnerabilities } from './pages/Vulnerabilities';
 import { Breaches } from './pages/Breaches';
 import { ThreatIntelPage } from './pages/ThreatIntel';
 import { Import } from './pages/Import';
+import { Settings } from './pages/Settings';
+import { Attack } from './pages/Attack';
 
 export default function App() {
   return (
@@ -17,6 +19,8 @@ export default function App() {
           <Route path="/breaches" element={<Breaches />} />
           <Route path="/threat-intel" element={<ThreatIntelPage />} />
           <Route path="/import" element={<Import />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/attack" element={<Attack />} />
         </Routes>
       </main>
     </div>

@@ -103,6 +103,39 @@ export interface BreachFilters {
   limit?: number;
 }
 
+export interface SettingsStatus {
+  sources: Array<{
+    name: string;
+    lastSync: string;
+    status: string;
+    recordsSynced: number;
+    errorMessage: string | null;
+  }>;
+  keys: Record<string, boolean>;
+}
+
+export interface AttackTechnique {
+  id: number;
+  technique_id: string;
+  name: string;
+  description: string | null;
+  tactic: string;
+  platform: string[];
+  data_sources: string[];
+  url: string | null;
+}
+
+export interface Alert {
+  id: number;
+  type: string;
+  title: string;
+  message: string | null;
+  reference_id: string | null;
+  severity: string | null;
+  read: boolean;
+  created_at: string;
+}
+
 export interface ImportJob {
   id: number;
   filename: string;

@@ -1,5 +1,6 @@
 const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
+const { generateAlerts } = require('../utils/alertGenerator');
 
 const NVD_BASE = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
 
@@ -32,6 +33,7 @@ async function syncNvd({ daysBack = 7 } = {}) {
   let recordsSynced = 0;
   let startIndex = 0;
   const pageSize = 2000;
+  const syncedRecords = [];
 
   const pubStartDate = new Date(Date.now() - daysBack * 86400000).toISOString();
   const pubEndDate = new Date().toISOString();
@@ -97,6 +99,7 @@ async function syncNvd({ daysBack = 7 } = {}) {
             raw_data: record.raw_data,
           });
 
+        syncedRecords.push(record);
         recordsSynced++;
       }
 
@@ -108,6 +111,7 @@ async function syncNvd({ daysBack = 7 } = {}) {
     }
 
     await db('sync_log').insert({ source: 'nvd', status: 'success', records_synced: recordsSynced });
+    await generateAlerts('nvd', syncedRecords).catch((e) => console.error('[NVD] Alert generation failed:', e.message));
     console.log(`[NVD] Synced ${recordsSynced} CVEs in ${Date.now() - startTime}ms`);
     return { success: true, recordsSynced };
   } catch (err) {

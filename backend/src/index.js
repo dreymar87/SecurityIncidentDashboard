@@ -13,7 +13,7 @@ fs.mkdirSync('/tmp/sid-imports', { recursive: true });
 
 // Validate required environment variables
 const REQUIRED_ENV = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
-const OPTIONAL_ENV = ['NVD_API_KEY', 'HIBP_API_KEY', 'GREYNOISE_API_KEY'];
+const OPTIONAL_ENV = ['NVD_API_KEY', 'HIBP_API_KEY', 'GREYNOISE_API_KEY', 'GITHUB_TOKEN'];
 
 for (const key of REQUIRED_ENV) {
   if (!process.env[key]) {
@@ -33,6 +33,9 @@ const threatIntelRouter = require('./routes/threatIntel');
 const statsRouter = require('./routes/stats');
 const syncRouter = require('./routes/sync');
 const importsRouter = require('./routes/imports');
+const settingsRouter = require('./routes/settings');
+const attackRouter = require('./routes/attack');
+const alertsRouter = require('./routes/alerts');
 const { startScheduler } = require('./jobs/scheduler');
 
 const app = express();
@@ -79,6 +82,9 @@ app.use('/api/threat-intel', threatIntelRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/sync', syncRouter);
 app.use('/api/imports', importsRouter);
+app.use('/api/settings', settingsRouter);
+app.use('/api/attack', attackRouter);
+app.use('/api/alerts', alertsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 

@@ -76,6 +76,46 @@ router.get('/:jobId/status', async (req, res) => {
   }
 });
 
+// GET /api/imports/:jobId/stream — SSE endpoint for real-time import status
+router.get('/:jobId/stream', async (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+
+  const jobId = req.params.jobId;
+
+  const sendStatus = async () => {
+    try {
+      const job = await db('import_jobs').where('id', jobId).first();
+      if (!job) {
+        res.write(`data: ${JSON.stringify({ error: 'Job not found' })}\n\n`);
+        clearInterval(interval);
+        res.end();
+        return;
+      }
+      res.write(`data: ${JSON.stringify(job)}\n\n`);
+      if (job.status === 'done' || job.status === 'failed') {
+        clearInterval(interval);
+        res.end();
+      }
+    } catch (err) {
+      clearInterval(interval);
+      res.end();
+    }
+  };
+
+  // Send initial status immediately
+  await sendStatus();
+
+  const interval = setInterval(sendStatus, 1000);
+
+  req.on('close', () => {
+    clearInterval(interval);
+  });
+});
+
 // GET /api/imports — list recent import jobs
 router.get('/', async (req, res) => {
   try {

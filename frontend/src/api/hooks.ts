@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { api, DashboardStats, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters } from './client';
+import { api, DashboardStats, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert } from './client';
 
 export function useStats() {
   return useQuery<DashboardStats>({
@@ -63,6 +63,40 @@ export function useBreachRelatedVulns(breachId: number | null) {
     queryKey: ['breach-related-vulns', breachId],
     queryFn: () => api.get(`/breaches/${breachId}/related-vulns`).then((r) => r.data),
     enabled: breachId !== null,
+  });
+}
+
+export function useSettings() {
+  return useQuery<SettingsStatus>({
+    queryKey: ['settings'],
+    queryFn: () => api.get('/settings/status').then((r) => r.data),
+    refetchInterval: 60 * 1000,
+  });
+}
+
+export function useAttackTechniques(filters: Record<string, string> = {}) {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== '')
+  );
+  return useQuery<Record<string, AttackTechnique[]>>({
+    queryKey: ['attack-techniques', params],
+    queryFn: () => api.get('/attack', { params }).then((r) => r.data),
+  });
+}
+
+export function useAlerts() {
+  return useQuery<Alert[]>({
+    queryKey: ['alerts'],
+    queryFn: () => api.get('/alerts').then((r) => r.data),
+    refetchInterval: 60 * 1000,
+  });
+}
+
+export function useUnreadAlertCount() {
+  return useQuery<{ count: number }>({
+    queryKey: ['alerts-unread'],
+    queryFn: () => api.get('/alerts/unread-count').then((r) => r.data),
+    refetchInterval: 60 * 1000,
   });
 }
 
