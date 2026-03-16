@@ -2,9 +2,16 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
+const pinoHttp = require('pino-http');
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
+
+const session = require('express-session');
+const PgSession = require('connect-pg-simple')(session);
+
+const logger = require('./utils/logger');
+const { client, httpMetricsMiddleware } = require('./utils/metrics');
+const { passport } = require('./utils/auth');
 
 // ── Startup guards ────────────────────────────────────────────────────────────
 
@@ -17,13 +24,13 @@ const OPTIONAL_ENV = ['NVD_API_KEY', 'HIBP_API_KEY', 'GREYNOISE_API_KEY', 'GITHU
 
 for (const key of REQUIRED_ENV) {
   if (!process.env[key]) {
-    console.error(`[Config] FATAL: Required environment variable ${key} is not set. Check your .env file.`);
+    logger.fatal(`[Config] Required environment variable ${key} is not set. Check your .env file.`);
     process.exit(1);
   }
 }
 for (const key of OPTIONAL_ENV) {
   if (!process.env[key]) {
-    console.warn(`[Config] Optional environment variable ${key} is not set — related sync will be skipped.`);
+    logger.warn(`[Config] Optional environment variable ${key} is not set — related sync will be skipped.`);
   }
 }
 
@@ -68,13 +75,38 @@ const uploadLimiter = rateLimit({
 });
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' }));
-app.use(morgan('dev'));
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+app.use(pinoHttp({ logger }));
 app.use(express.json());
+app.use(httpMetricsMiddleware);
+
+if (process.env.ENABLE_AUTH === 'true') {
+  if (!process.env.SESSION_SECRET) {
+    logger.warn('[Auth] SESSION_SECRET not set — using insecure default');
+  }
+  app.use(session({
+    store: new PgSession({
+      conString: `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT || 5432}/${process.env.DB_NAME}`,
+      createTableIfMissing: true,
+    }),
+    secret: process.env.SESSION_SECRET || 'change-me-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+  }));
+  app.use(passport.initialize());
+  app.use(passport.session());
+}
 
 app.use('/api', generalLimiter);
 app.use('/api/sync/trigger', syncLimiter);
 app.use('/api/imports/upload', uploadLimiter);
+
+app.use('/auth', require('./routes/auth'));
 
 app.use('/api/vulnerabilities', vulnerabilitiesRouter);
 app.use('/api/breaches', breachesRouter);
@@ -88,8 +120,13 @@ app.use('/api/alerts', alertsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', client.contentType);
+  res.end(await client.metrics());
+});
+
 app.listen(PORT, () => {
-  console.log(`[Server] Running on port ${PORT}`);
+  logger.info(`[Server] Running on port ${PORT}`);
   if (process.env.ENABLE_SCHEDULER !== 'false') {
     startScheduler();
   }

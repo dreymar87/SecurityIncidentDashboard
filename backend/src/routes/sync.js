@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const logger = require('../utils/logger');
+const { requireAuth } = require('../utils/auth');
 const { syncCisaKev } = require('../services/cisa.service');
 const { syncNvd } = require('../services/nvd.service');
 const { syncHibpBreaches } = require('../services/hibp.service');
@@ -32,13 +34,13 @@ router.get('/status', async (req, res) => {
       );
     res.json(rows);
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, 'Failed to fetch sync status');
     res.status(500).json({ error: 'Failed to fetch sync status' });
   }
 });
 
 // POST /api/sync/trigger/:source
-router.post('/trigger/:source', async (req, res) => {
+router.post('/trigger/:source', requireAuth, async (req, res) => {
   const { source } = req.params;
   const syncer = syncers[source];
 
@@ -52,7 +54,7 @@ router.post('/trigger/:source', async (req, res) => {
   try {
     await syncer();
   } catch (err) {
-    console.error(`[Sync] Manual trigger for ${source} failed:`, err.message);
+    logger.error('[Sync] Manual trigger for %s failed: %s', source, err.message);
   }
 });
 

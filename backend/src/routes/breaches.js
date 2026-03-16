@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { Parser } = require('json2csv');
+const logger = require('../utils/logger');
 
 function sanitizePagination(rawPage, rawLimit) {
   const page = Math.max(1, parseInt(rawPage) || 1);
@@ -73,7 +74,7 @@ router.get('/', async (req, res) => {
       data: rows,
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, 'Failed to fetch breaches');
     res.status(500).json({ error: 'Failed to fetch breaches' });
   }
 });

@@ -1,4 +1,5 @@
 const db = require('../db');
+const logger = require('./logger');
 
 async function generateAlerts(source, records) {
   if (!records || records.length === 0) return;
@@ -36,7 +37,7 @@ async function generateAlerts(source, records) {
   const newAlerts = alerts.filter((a) => !existingSet.has(a.reference_id));
   if (newAlerts.length > 0) {
     await db('alerts').insert(newAlerts);
-    console.log(`[Alerts] Generated ${newAlerts.length} new alerts from ${source}`);
+    logger.info(`[Alerts] Generated ${newAlerts.length} new alerts from ${source}`);
   }
 }
 

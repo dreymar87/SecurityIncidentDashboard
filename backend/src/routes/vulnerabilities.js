@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { Parser } = require('json2csv');
+const logger = require('../utils/logger');
 
 const VALID_SEVERITIES = new Set(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'NONE']);
 
@@ -86,7 +87,7 @@ router.get('/', async (req, res) => {
       data: rows,
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, 'Failed to fetch vulnerabilities');
     res.status(500).json({ error: 'Failed to fetch vulnerabilities' });
   }
 });
@@ -98,7 +99,7 @@ router.get('/:cveId', async (req, res) => {
     if (!row) return res.status(404).json({ error: 'CVE not found' });
     res.json(row);
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, 'Failed to fetch CVE');
     res.status(500).json({ error: 'Failed to fetch CVE' });
   }
 });

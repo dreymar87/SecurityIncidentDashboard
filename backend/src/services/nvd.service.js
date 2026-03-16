@@ -1,6 +1,8 @@
 const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
 const { generateAlerts } = require('../utils/alertGenerator');
+const logger = require('../utils/logger');
+const { syncRecordsTotal } = require('../utils/metrics');
 
 const NVD_BASE = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
 
@@ -39,7 +41,7 @@ async function syncNvd({ daysBack = 7 } = {}) {
   const pubEndDate = new Date().toISOString();
 
   try {
-    while (true) {
+    while (true) { // eslint-disable-line no-constant-condition
       const params = {
         pubStartDate,
         pubEndDate,
@@ -111,8 +113,9 @@ async function syncNvd({ daysBack = 7 } = {}) {
     }
 
     await db('sync_log').insert({ source: 'nvd', status: 'success', records_synced: recordsSynced });
-    await generateAlerts('nvd', syncedRecords).catch((e) => console.error('[NVD] Alert generation failed:', e.message));
-    console.log(`[NVD] Synced ${recordsSynced} CVEs in ${Date.now() - startTime}ms`);
+    await generateAlerts('nvd', syncedRecords).catch((e) => logger.error('[NVD] Alert generation failed: %s', e.message));
+    syncRecordsTotal.labels('nvd').inc(recordsSynced);
+    logger.info(`[NVD] Synced ${recordsSynced} CVEs in ${Date.now() - startTime}ms`);
     return { success: true, recordsSynced };
   } catch (err) {
     await db('sync_log').insert({
@@ -121,7 +124,7 @@ async function syncNvd({ daysBack = 7 } = {}) {
       records_synced: recordsSynced,
       error_message: err.message,
     });
-    console.error('[NVD] Sync failed:', err.message);
+    logger.error('[NVD] Sync failed: %s', err.message);
     throw err;
   }
 }

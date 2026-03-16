@@ -1,6 +1,7 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const db = require('../db');
+const logger = require('./logger');
 
 // Field mapping: user column name -> internal field
 const VULN_FIELD_MAP = {
@@ -26,7 +27,7 @@ const BREACH_FIELD_MAP = {
 };
 
 function normalizeKey(key) {
-  return key.toLowerCase().replace(/[\s\-]/g, '_');
+  return key.toLowerCase().replace(/[\s\-]/g, '_'); // eslint-disable-line no-useless-escape
 }
 
 function pgArrayLiteral(csv) {
@@ -118,13 +119,13 @@ async function parseImportFile(filePath, format, type) {
         }
         imported++;
       } catch (err) {
-        console.warn('[Import] Skipped row:', err.message);
+        logger.warn('[Import] Skipped row: %s', err.message);
       }
     }
   });
 
   // Cleanup temp file
-  try { fs.unlinkSync(filePath); } catch (_) {}
+  try { fs.unlinkSync(filePath); } catch (_) {} // eslint-disable-line no-empty
 
   return { total, imported };
 }

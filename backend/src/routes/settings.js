@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const logger = require('../utils/logger');
 
 const API_KEYS = ['NVD_API_KEY', 'HIBP_API_KEY', 'GREYNOISE_API_KEY', 'GITHUB_TOKEN'];
 
@@ -29,7 +30,7 @@ router.get('/status', async (req, res) => {
 
     res.json({ sources, keys });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, 'Failed to fetch settings status');
     res.status(500).json({ error: 'Failed to fetch settings status' });
   }
 });

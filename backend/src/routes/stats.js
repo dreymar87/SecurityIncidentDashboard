@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const logger = require('../utils/logger');
 
 // GET /api/stats
 router.get('/', async (req, res) => {
@@ -93,7 +94,7 @@ router.get('/', async (req, res) => {
       lastSync,
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, 'Failed to fetch stats');
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });

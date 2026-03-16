@@ -1,4 +1,5 @@
 const axios = require('axios');
+const logger = require('./logger');
 
 /**
  * Axios wrapper with exponential backoff retry logic.
@@ -35,7 +36,7 @@ async function axiosWithRetry(config, { maxRetries = 3, baseDelay = 1000 } = {})
         delay = baseDelay * Math.pow(2, attempt);
       }
 
-      console.warn(`[httpClient] ${status} on ${config.url || config.baseURL} — retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+      logger.warn(`[httpClient] ${status} on ${config.url || config.baseURL} — retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
       await new Promise((r) => setTimeout(r, delay));
     }
   }
