@@ -3,12 +3,37 @@ const router = express.Router();
 const db = require('../db');
 const logger = require('../utils/logger');
 
-// GET /api/alerts — recent alerts
+const SEVERITY_ORDER = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+
+function getSeveritiesAtOrAbove(threshold) {
+  if (!threshold || threshold === 'ALL') return null; // no filter
+  const idx = SEVERITY_ORDER.indexOf(threshold);
+  if (idx === -1) return null;
+  return SEVERITY_ORDER.slice(0, idx + 1);
+}
+
+async function getUserAlertThreshold(req) {
+  if (!req.user) return null;
+  try {
+    const user = await db('users').where('id', req.user.id).select('preferences').first();
+    return user?.preferences?.alertThreshold || null;
+  } catch {
+    return null;
+  }
+}
+
+// GET /api/alerts — recent alerts (filtered by user's severity preference)
 router.get('/', async (req, res) => {
   try {
-    const alerts = await db('alerts')
-      .orderBy('created_at', 'desc')
-      .limit(50);
+    let query = db('alerts').orderBy('created_at', 'desc').limit(50);
+
+    const threshold = await getUserAlertThreshold(req);
+    const severities = getSeveritiesAtOrAbove(threshold);
+    if (severities) {
+      query = query.whereIn('severity', severities);
+    }
+
+    const alerts = await query;
     res.json(alerts);
   } catch (err) {
     logger.error({ err }, 'Alert route error');
@@ -19,7 +44,15 @@ router.get('/', async (req, res) => {
 // GET /api/alerts/unread-count
 router.get('/unread-count', async (req, res) => {
   try {
-    const [{ count }] = await db('alerts').where('read', false).count('id as count');
+    let query = db('alerts').where('read', false);
+
+    const threshold = await getUserAlertThreshold(req);
+    const severities = getSeveritiesAtOrAbove(threshold);
+    if (severities) {
+      query = query.whereIn('severity', severities);
+    }
+
+    const [{ count }] = await query.count('id as count');
     res.json({ count: parseInt(count) });
   } catch (err) {
     logger.error({ err }, 'Alert route error');

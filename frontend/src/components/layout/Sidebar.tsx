@@ -1,9 +1,11 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Activity, Crosshair, X
+  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Activity, Crosshair, X, Users, LogOut
 } from 'lucide-react';
+import { useCurrentUser } from '../../api/hooks';
+import { api } from '../../api/client';
 
-const navItems = [
+const baseNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/vulnerabilities', icon: Shield, label: 'Vulnerabilities' },
   { to: '/breaches', icon: AlertTriangle, label: 'Data Breaches' },
@@ -20,6 +22,21 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) {
+  const { data: currentUser } = useCurrentUser();
+  const isAdmin = currentUser?.role === 'admin';
+
+  const navItems = [
+    ...baseNavItems,
+    ...(isAdmin ? [{ to: '/admin/users', icon: Users, label: 'Users' }] : []),
+  ];
+
+  async function handleLogout() {
+    try {
+      await api.post('/auth/logout');
+      window.location.reload();
+    } catch { /* ignore */ }
+  }
+
   return (
     <>
       {/* Mobile overlay */}
@@ -81,14 +98,30 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) 
           ))}
         </nav>
 
-        {!collapsed && (
-          <div className="px-4 py-4 border-t border-gray-800">
+        <div className="px-4 py-4 border-t border-gray-800">
+          {!collapsed && currentUser && (
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs font-medium text-gray-300">{currentUser.username}</p>
+                <p className="text-xs text-gray-500 capitalize">{currentUser.role}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-gray-500 hover:text-gray-300 transition-colors"
+                aria-label="Log out"
+                title="Log out"
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
+          )}
+          {!collapsed && (
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Activity size={12} className="text-green-400" />
               <span>Live monitoring active</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </aside>
     </>
   );

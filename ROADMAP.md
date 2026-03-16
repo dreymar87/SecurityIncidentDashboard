@@ -2,18 +2,7 @@
 
 This document tracks planned features and improvements. Items are grouped by phase and ordered by suggested implementation sequence within each phase.
 
-**Current status**: Phase 4 complete (UI/UX polish).
-
----
-
-## Phase 5 — Multi-User Support
-
-| Status | ID | Feature | Description |
-|--------|-----|---------|-------------|
-| ⬜ | P5-1 | **Multiple user accounts** | Extend Passport.js local strategy (P3-4) to support multiple users in a `users` table. Registration via CLI script or admin-invite flow — no public self-signup. |
-| ⬜ | P5-2 | **User management page** | New `/admin/users` page to add/remove users and reset passwords. Backend: `GET/POST/DELETE /users` routes. |
-| ⬜ | P5-3 | **Per-user alert preferences** | Each user configures which alert severities trigger their in-app bell. Stored in a `user_preferences` JSON column. |
-| ⬜ | P5-4 | **Audit log** | Track who triggered manual syncs and imports. New `audit_log` table. Recent-actions panel on Settings page with user + timestamp. |
+**Current status**: Phase 5 complete (Multi-User Support).
 
 ---
 
@@ -32,6 +21,10 @@ This document tracks planned features and improvements. Items are grouped by pha
 ## Completed
 
 | Phase | ID | Feature |
+| 5 | P5-1 | Multiple user accounts — CLI `create-user.js` script, `requireAdmin` middleware, admin + viewer roles |
+| 5 | P5-2 | User management page — `/admin/users` with add/remove users, reset passwords, role badges |
+| 5 | P5-3 | Per-user alert preferences — severity threshold (CRITICAL/HIGH/MEDIUM/LOW/ALL) in user preferences |
+| 5 | P5-4 | Audit log — `audit_log` table, tracks sync triggers, imports, user management actions, panel on Settings |
 |-------|----|---------|
 | 4 | P4-1 | Responsive layout — sidebar collapses to icon rail on <1024px, mobile hamburger menu, table horizontal scroll |
 | 4 | P4-2 | Trend / time-series charts — Recharts LineChart with 7d/30d/90d range selector on Dashboard |
