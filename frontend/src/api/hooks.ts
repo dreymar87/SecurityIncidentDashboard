@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { api, DashboardStats, TrendData, SearchResults, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert } from './client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { api, DashboardStats, TrendData, SearchResults, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert, User, UserPreferences, AuditLogEntry } from './client';
 
 export function useStats() {
   return useQuery<DashboardStats>({
@@ -122,6 +122,73 @@ export function useUnreadAlertCount() {
     queryKey: ['alerts-unread'],
     queryFn: () => api.get('/alerts/unread-count').then((r) => r.data),
     refetchInterval: 60 * 1000,
+  });
+}
+
+export function useCurrentUser() {
+  return useQuery<User | null>({
+    queryKey: ['current-user'],
+    queryFn: () => api.get('/auth/me').then((r) => r.data).catch(() => null),
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUsers() {
+  return useQuery<User[]>({
+    queryKey: ['users'],
+    queryFn: () => api.get('/users').then((r) => r.data),
+  });
+}
+
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { username: string; password: string; role: string; email?: string }) =>
+      api.post('/users', data).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) => api.delete(`/users/${userId}`).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: ({ userId, password }: { userId: number; password: string }) =>
+      api.put(`/users/${userId}/reset-password`, { password }).then((r) => r.data),
+  });
+}
+
+export function useUserPreferences() {
+  return useQuery<UserPreferences>({
+    queryKey: ['user-preferences'],
+    queryFn: () => api.get('/users/me/preferences').then((r) => r.data),
+  });
+}
+
+export function useUpdatePreferences() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (prefs: Partial<UserPreferences>) =>
+      api.put('/users/me/preferences', prefs).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['alerts-unread'] });
+    },
+  });
+}
+
+export function useAuditLog(page = 1) {
+  return useQuery<PaginatedResponse<AuditLogEntry>>({
+    queryKey: ['audit-log', page],
+    queryFn: () => api.get('/audit-log', { params: { page, limit: 20 } }).then((r) => r.data),
   });
 }
 

@@ -6,6 +6,7 @@ const db = require('../db');
 const { parseImportFile } = require('../utils/importParser');
 const logger = require('../utils/logger');
 const { requireAuth } = require('../utils/auth');
+const { logAudit } = require('../utils/auditLog');
 
 const upload = multer({
   dest: '/tmp/sid-imports/',
@@ -43,6 +44,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
   }
 
   res.json({ jobId, message: 'Import started' });
+  logAudit({ req, action: 'import_upload', resourceType: 'import', resourceId: String(jobId), details: { filename: req.file.originalname, type, format } });
 
   // Process asynchronously
   setImmediate(async () => {

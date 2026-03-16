@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const logger = require('../utils/logger');
 const { requireAuth } = require('../utils/auth');
+const { logAudit } = require('../utils/auditLog');
 const { syncCisaKev } = require('../services/cisa.service');
 const { syncNvd } = require('../services/nvd.service');
 const { syncHibpBreaches } = require('../services/hibp.service');
@@ -50,6 +51,7 @@ router.post('/trigger/:source', requireAuth, async (req, res) => {
 
   // Respond immediately, run in background
   res.json({ message: `Sync triggered for ${source}`, status: 'running' });
+  logAudit({ req, action: 'sync_trigger', resourceType: 'sync', resourceId: source });
 
   try {
     await syncer();

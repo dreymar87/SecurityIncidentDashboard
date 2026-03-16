@@ -160,3 +160,28 @@ export interface ImportJob {
   created_at: string;
   completed_at: string | null;
 }
+
+export interface User {
+  id: number;
+  username: string;
+  email: string | null;
+  role: 'admin' | 'viewer';
+  active: boolean;
+  created_at: string;
+}
+
+export interface UserPreferences {
+  alertThreshold: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'ALL';
+}
+
+export interface AuditLogEntry {
+  id: number;
+  user_id: number | null;
+  username: string | null;
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  details: Record<string, unknown> | null;
+  ip_address: string | null;
+  created_at: string;
+}

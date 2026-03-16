@@ -33,4 +33,11 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Authentication required' });
 }
 
-module.exports = { passport, requireAuth };
+function requireAdmin(req, res, next) {
+  if (!process.env.ENABLE_AUTH || process.env.ENABLE_AUTH !== 'true') return next();
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Authentication required' });
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+  next();
+}
+
+module.exports = { passport, requireAuth, requireAdmin };

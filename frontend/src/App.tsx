@@ -10,6 +10,7 @@ import { ThreatIntelPage } from './pages/ThreatIntel';
 import { Import } from './pages/Import';
 import { Settings } from './pages/Settings';
 import { Attack } from './pages/Attack';
+import { UserManagement } from './pages/UserManagement';
 
 function useViewport() {
   const [width, setWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/import" element={<Import {...pageProps} />} />
           <Route path="/settings" element={<Settings {...pageProps} />} />
           <Route path="/attack" element={<Attack {...pageProps} />} />
+          <Route path="/admin/users" element={<UserManagement {...pageProps} />} />
         </Routes>
       </main>
     </div>
