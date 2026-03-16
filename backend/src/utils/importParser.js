@@ -26,7 +26,7 @@ const BREACH_FIELD_MAP = {
 };
 
 function normalizeKey(key) {
-  return key.toLowerCase().replace(/[\s\-]/g, '_');
+  return key.toLowerCase().replace(/[\s\-]/g, '_'); // eslint-disable-line no-useless-escape
 }
 
 function pgArrayLiteral(csv) {
@@ -124,7 +124,7 @@ async function parseImportFile(filePath, format, type) {
   });
 
   // Cleanup temp file
-  try { fs.unlinkSync(filePath); } catch (_) {}
+  try { fs.unlinkSync(filePath); } catch (_) {} // eslint-disable-line no-empty
 
   return { total, imported };
 }

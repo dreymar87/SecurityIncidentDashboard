@@ -9,6 +9,7 @@
     "migrate": "knex --knexfile src/db/knexfile.js migrate:latest",
     "migrate:rollback": "knex --knexfile src/db/knexfile.js migrate:rollback",
     "migrate:make": "knex --knexfile src/db/knexfile.js migrate:make",
+    "lint": "eslint src --ext .js",
     "test": "jest --runInBand",
     "test:watch": "jest --watch"
   },
@@ -28,12 +29,15 @@
     "pg": "^8.11.3"
   },
   "devDependencies": {
+    "eslint": "^8.57.1",
     "jest": "^30.3.0",
     "nodemon": "^3.1.0",
     "supertest": "^7.2.2"
   },
   "jest": {
     "testEnvironment": "node",
-    "testMatch": ["**/__tests__/**/*.test.js"]
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ]
   }
 }

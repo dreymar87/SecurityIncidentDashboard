@@ -39,7 +39,7 @@ async function syncNvd({ daysBack = 7 } = {}) {
   const pubEndDate = new Date().toISOString();
 
   try {
-    while (true) {
+    while (true) { // eslint-disable-line no-constant-condition
       const params = {
         pubStartDate,
         pubEndDate,
