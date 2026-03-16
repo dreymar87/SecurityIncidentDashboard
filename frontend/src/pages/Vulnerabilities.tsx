@@ -5,7 +5,12 @@ import { VulnTable } from '../components/vulnerabilities/VulnTable';
 import { SkeletonTable } from '../components/SkeletonLoader';
 import { TopBar } from '../components/layout/TopBar';
 
-export function Vulnerabilities() {
+interface PageProps {
+  onMobileMenuToggle?: () => void;
+  isMobile?: boolean;
+}
+
+export function Vulnerabilities({ onMobileMenuToggle, isMobile }: PageProps) {
   const [filters, setFilters] = useState<Record<string, string | boolean | undefined>>({});
   const [page, setPage] = useState(1);
 
@@ -22,7 +27,7 @@ export function Vulnerabilities() {
 
   return (
     <div>
-      <TopBar title="Vulnerabilities" />
+      <TopBar title="Vulnerabilities" onMobileMenuToggle={onMobileMenuToggle} isMobile={isMobile} />
       <div className="p-6 space-y-4">
         <FilterBar
           mode="vulnerabilities"

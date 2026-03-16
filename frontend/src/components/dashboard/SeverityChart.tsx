@@ -17,7 +17,7 @@ export function SeverityChart({ stats }: { stats: DashboardStats }) {
   }));
 
   return (
-    <div className="card">
+    <div className="card" role="figure" aria-label="Vulnerability severity distribution chart">
       <h3 className="text-sm font-semibold text-gray-300 mb-4">Severity Distribution</h3>
       <div className="grid grid-cols-2 gap-4">
         <ResponsiveContainer width="100%" height={180}>

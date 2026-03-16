@@ -1,6 +1,7 @@
 import { ThreatIntel } from '../../api/client';
-import { Wifi, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Wifi, ChevronLeft, ChevronRight, Radio } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { EmptyState } from '../EmptyState';
 
 interface ThreatPanelProps {
   data: ThreatIntel[];
@@ -35,23 +36,27 @@ export function ThreatPanel({ data, total, page, pages, onPageChange, loading }:
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[700px]">
           <thead>
             <tr className="border-b border-gray-800">
-              <th className="table-header px-4 py-3 text-left">IP Address</th>
-              <th className="table-header px-4 py-3 text-left">Country</th>
-              <th className="table-header px-4 py-3 text-left">Organization</th>
-              <th className="table-header px-4 py-3 text-left">Tags</th>
-              <th className="table-header px-4 py-3 text-left">Risk</th>
-              <th className="table-header px-4 py-3 text-left">Source</th>
-              <th className="table-header px-4 py-3 text-left">Last Seen</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">IP Address</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Country</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Organization</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Tags</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Risk</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Source</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Last Seen</th>
             </tr>
           </thead>
           <tbody className={loading ? 'opacity-50' : ''}>
             {data.length === 0 && (
               <tr>
-                <td colSpan={7} className="table-cell text-center text-gray-500 py-12">
-                  No threat intel data. Set a GreyNoise API key and trigger sync.
+                <td colSpan={7}>
+                  <EmptyState
+                    icon={Radio}
+                    title="No threat intel data"
+                    description="Set a GreyNoise API key in your .env file and trigger a sync to fetch threat intelligence."
+                  />
                 </td>
               </tr>
             )}

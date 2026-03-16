@@ -12,12 +12,17 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
   pending: <Clock size={13} className="text-gray-400" />,
 };
 
-export function Import() {
+interface PageProps {
+  onMobileMenuToggle?: () => void;
+  isMobile?: boolean;
+}
+
+export function Import({ onMobileMenuToggle, isMobile }: PageProps) {
   const { data: jobs } = useImportJobs();
 
   return (
     <div>
-      <TopBar title="Import Data" />
+      <TopBar title="Import Data" onMobileMenuToggle={onMobileMenuToggle} isMobile={isMobile} />
       <div className="p-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2">
           <ImportWizard />

@@ -43,6 +43,7 @@ const importsRouter = require('./routes/imports');
 const settingsRouter = require('./routes/settings');
 const attackRouter = require('./routes/attack');
 const alertsRouter = require('./routes/alerts');
+const searchRouter = require('./routes/search');
 const { startScheduler } = require('./jobs/scheduler');
 
 const app = express();
@@ -117,6 +118,7 @@ app.use('/api/imports', importsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/attack', attackRouter);
 app.use('/api/alerts', alertsRouter);
+app.use('/api/search', searchRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 

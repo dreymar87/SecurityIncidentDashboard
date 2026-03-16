@@ -1,10 +1,27 @@
 import { useQuery } from '@tanstack/react-query';
-import { api, DashboardStats, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert } from './client';
+import { api, DashboardStats, TrendData, SearchResults, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert } from './client';
 
 export function useStats() {
   return useQuery<DashboardStats>({
     queryKey: ['stats'],
     queryFn: () => api.get('/stats').then((r) => r.data),
+    refetchInterval: 5 * 60 * 1000,
+  });
+}
+
+export function useGlobalSearch(q: string) {
+  return useQuery<SearchResults>({
+    queryKey: ['global-search', q],
+    queryFn: () => api.get('/search', { params: { q } }).then((r) => r.data),
+    enabled: q.length >= 2,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useTrends(range: '7d' | '30d' | '90d' = '30d') {
+  return useQuery<TrendData>({
+    queryKey: ['trends', range],
+    queryFn: () => api.get('/stats/trends', { params: { range } }).then((r) => r.data),
     refetchInterval: 5 * 60 * 1000,
   });
 }
@@ -55,6 +72,14 @@ export function useSyncStatus() {
     queryKey: ['sync-status'],
     queryFn: () => api.get('/sync/status').then((r) => r.data),
     refetchInterval: 60 * 1000,
+  });
+}
+
+export function useBreach(breachId: number | null) {
+  return useQuery<Breach>({
+    queryKey: ['breach', breachId],
+    queryFn: () => api.get(`/breaches/${breachId}`).then((r) => r.data),
+    enabled: breachId !== null && !isNaN(breachId),
   });
 }
 

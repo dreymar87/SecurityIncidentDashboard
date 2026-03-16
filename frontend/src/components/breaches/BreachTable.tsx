@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronLeft, ChevronRight, ExternalLink, CheckCircle, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, CheckCircle, Lock, DatabaseZap } from 'lucide-react';
 import { Breach } from '../../api/client';
+import { EmptyState } from '../EmptyState';
 
 interface BreachTableProps {
   data: Breach[];
@@ -8,7 +10,6 @@ interface BreachTableProps {
   page: number;
   pages: number;
   onPageChange: (page: number) => void;
-  onSelect: (breach: Breach) => void;
   loading?: boolean;
 }
 
@@ -20,7 +21,9 @@ function formatRecords(n: number | null) {
   return n.toLocaleString();
 }
 
-export function BreachTable({ data, total, page, pages, onPageChange, onSelect, loading }: BreachTableProps) {
+export function BreachTable({ data, total, page, pages, onPageChange, loading }: BreachTableProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="card p-0 overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
@@ -36,29 +39,33 @@ export function BreachTable({ data, total, page, pages, onPageChange, onSelect, 
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[750px]">
           <thead>
             <tr className="border-b border-gray-800">
-              <th className="table-header px-4 py-3 text-left">Organization</th>
-              <th className="table-header px-4 py-3 text-left">Domain</th>
-              <th className="table-header px-4 py-3 text-left">Country</th>
-              <th className="table-header px-4 py-3 text-left">Date</th>
-              <th className="table-header px-4 py-3 text-right">Records</th>
-              <th className="table-header px-4 py-3 text-left">Data Types</th>
-              <th className="table-header px-4 py-3 text-left">Source</th>
-              <th className="table-header px-4 py-3 text-left">Flags</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Organization</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Domain</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Country</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Date</th>
+              <th scope="col" className="table-header px-4 py-3 text-right">Records</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Data Types</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Source</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Flags</th>
             </tr>
           </thead>
           <tbody className={loading ? 'opacity-50' : ''}>
             {data.length === 0 && (
               <tr>
-                <td colSpan={8} className="table-cell text-center text-gray-500 py-12">
-                  No breaches found. Trigger a sync or import data.
+                <td colSpan={8}>
+                  <EmptyState
+                    icon={DatabaseZap}
+                    title="No breaches found"
+                    description="Trigger a sync or import data to populate breach records."
+                  />
                 </td>
               </tr>
             )}
             {data.map((breach) => (
-              <tr key={breach.id} className="table-row cursor-pointer" onClick={() => onSelect(breach)}>
+              <tr key={breach.id} className="table-row cursor-pointer" onClick={() => navigate(`/breaches/${breach.id}`)}>
                 <td className="table-cell font-medium text-gray-200">{breach.organization || '—'}</td>
                 <td className="table-cell text-xs font-mono text-gray-400">{breach.domain || '—'}</td>
                 <td className="table-cell">{breach.country || '—'}</td>

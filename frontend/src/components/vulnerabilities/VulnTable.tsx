@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronLeft, ChevronRight, ExternalLink, Zap, Shield } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Zap, Shield, ShieldOff } from 'lucide-react';
 import { Vulnerability } from '../../api/client';
 import { SeverityBadge } from './SeverityBadge';
-import { VulnDetail } from './VulnDetail';
+import { EmptyState } from '../EmptyState';
 
 interface VulnTableProps {
   data: Vulnerability[];
@@ -15,7 +15,7 @@ interface VulnTableProps {
 }
 
 export function VulnTable({ data, total, page, pages, onPageChange, loading }: VulnTableProps) {
-  const [selectedCveId, setSelectedCveId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   return (
     <div className="card p-0 overflow-hidden">
@@ -32,23 +32,27 @@ export function VulnTable({ data, total, page, pages, onPageChange, loading }: V
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[700px]">
           <thead>
             <tr className="border-b border-gray-800">
-              <th className="table-header px-4 py-3 text-left">CVE ID</th>
-              <th className="table-header px-4 py-3 text-left">Severity</th>
-              <th className="table-header px-4 py-3 text-left">CVSS</th>
-              <th className="table-header px-4 py-3 text-left">Title</th>
-              <th className="table-header px-4 py-3 text-left">Source</th>
-              <th className="table-header px-4 py-3 text-left">Flags</th>
-              <th className="table-header px-4 py-3 text-left">Published</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">CVE ID</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Severity</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">CVSS</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Title</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Source</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Flags</th>
+              <th scope="col" className="table-header px-4 py-3 text-left">Published</th>
             </tr>
           </thead>
           <tbody className={loading ? 'opacity-50' : ''}>
             {data.length === 0 && (
               <tr>
-                <td colSpan={7} className="table-cell text-center text-gray-500 py-12">
-                  No vulnerabilities found. Try adjusting filters or trigger a sync.
+                <td colSpan={7}>
+                  <EmptyState
+                    icon={ShieldOff}
+                    title="No vulnerabilities found"
+                    description="Try adjusting your filters or trigger a sync to fetch the latest CVE data."
+                  />
                 </td>
               </tr>
             )}
@@ -56,7 +60,7 @@ export function VulnTable({ data, total, page, pages, onPageChange, loading }: V
               <tr
                 key={vuln.id}
                 className="table-row cursor-pointer"
-                onClick={() => setSelectedCveId(vuln.cve_id)}
+                onClick={() => navigate(`/vulnerabilities/${vuln.cve_id}`)}
               >
                 <td className="table-cell">
                   <span className="font-mono text-sky-400 text-xs hover:text-sky-300">
@@ -123,10 +127,6 @@ export function VulnTable({ data, total, page, pages, onPageChange, loading }: V
             </button>
           </div>
         </div>
-      )}
-
-      {selectedCveId && (
-        <VulnDetail cveId={selectedCveId} onClose={() => setSelectedCveId(null)} />
       )}
     </div>
   );
