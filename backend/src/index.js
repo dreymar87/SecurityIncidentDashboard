@@ -2,9 +2,12 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
+const pinoHttp = require('pino-http');
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
+
+const logger = require('./utils/logger');
+const { client, httpMetricsMiddleware } = require('./utils/metrics');
 
 // ── Startup guards ────────────────────────────────────────────────────────────
 
@@ -17,13 +20,13 @@ const OPTIONAL_ENV = ['NVD_API_KEY', 'HIBP_API_KEY', 'GREYNOISE_API_KEY', 'GITHU
 
 for (const key of REQUIRED_ENV) {
   if (!process.env[key]) {
-    console.error(`[Config] FATAL: Required environment variable ${key} is not set. Check your .env file.`);
+    logger.fatal(`[Config] Required environment variable ${key} is not set. Check your .env file.`);
     process.exit(1);
   }
 }
 for (const key of OPTIONAL_ENV) {
   if (!process.env[key]) {
-    console.warn(`[Config] Optional environment variable ${key} is not set — related sync will be skipped.`);
+    logger.warn(`[Config] Optional environment variable ${key} is not set — related sync will be skipped.`);
   }
 }
 
@@ -69,8 +72,9 @@ const uploadLimiter = rateLimit({
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' }));
-app.use(morgan('dev'));
+app.use(pinoHttp({ logger }));
 app.use(express.json());
+app.use(httpMetricsMiddleware);
 
 app.use('/api', generalLimiter);
 app.use('/api/sync/trigger', syncLimiter);
@@ -88,8 +92,13 @@ app.use('/api/alerts', alertsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', client.contentType);
+  res.end(await client.metrics());
+});
+
 app.listen(PORT, () => {
-  console.log(`[Server] Running on port ${PORT}`);
+  logger.info(`[Server] Running on port ${PORT}`);
   if (process.env.ENABLE_SCHEDULER !== 'false') {
     startScheduler();
   }

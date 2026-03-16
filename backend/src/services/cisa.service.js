@@ -1,6 +1,8 @@
 const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
 const { generateAlerts } = require('../utils/alertGenerator');
+const logger = require('../utils/logger');
+const { syncRecordsTotal } = require('../utils/metrics');
 
 const CISA_KEV_URL =
   'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
@@ -54,8 +56,9 @@ async function syncCisaKev() {
       records_synced: recordsSynced,
     });
 
-    await generateAlerts('cisa', syncedRecords).catch((e) => console.error('[CISA] Alert generation failed:', e.message));
-    console.log(`[CISA] Synced ${recordsSynced} KEV entries in ${Date.now() - startTime}ms`);
+    await generateAlerts('cisa', syncedRecords).catch((e) => logger.error('[CISA] Alert generation failed: %s', e.message));
+    syncRecordsTotal.labels('cisa').inc(recordsSynced);
+    logger.info(`[CISA] Synced ${recordsSynced} KEV entries in ${Date.now() - startTime}ms`);
     return { success: true, recordsSynced };
   } catch (err) {
     await db('sync_log').insert({
@@ -64,7 +67,7 @@ async function syncCisaKev() {
       records_synced: recordsSynced,
       error_message: err.message,
     });
-    console.error('[CISA] Sync failed:', err.message);
+    logger.error('[CISA] Sync failed: %s', err.message);
     throw err;
   }
 }

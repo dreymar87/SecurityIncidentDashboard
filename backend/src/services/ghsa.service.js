@@ -1,6 +1,8 @@
 const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
 const { generateAlerts } = require('../utils/alertGenerator');
+const logger = require('../utils/logger');
+const { syncRecordsTotal } = require('../utils/metrics');
 
 const GITHUB_GRAPHQL = 'https://api.github.com/graphql';
 
@@ -36,7 +38,7 @@ query($cursor: String) {
 async function syncGhsa() {
   const token = process.env.GITHUB_TOKEN;
   if (!token) {
-    console.warn('[GHSA] GITHUB_TOKEN not set, skipping sync');
+    logger.warn('[GHSA] GITHUB_TOKEN not set, skipping sync');
     return { success: false, recordsSynced: 0 };
   }
 
@@ -125,8 +127,9 @@ async function syncGhsa() {
       records_synced: recordsSynced,
     });
 
-    await generateAlerts('ghsa', syncedRecords).catch((e) => console.error('[GHSA] Alert generation failed:', e.message));
-    console.log(`[GHSA] Synced ${recordsSynced} advisories in ${Date.now() - startTime}ms`);
+    await generateAlerts('ghsa', syncedRecords).catch((e) => logger.error('[GHSA] Alert generation failed: %s', e.message));
+    syncRecordsTotal.labels('ghsa').inc(recordsSynced);
+    logger.info(`[GHSA] Synced ${recordsSynced} advisories in ${Date.now() - startTime}ms`);
     return { success: true, recordsSynced };
   } catch (err) {
     await db('sync_log').insert({
@@ -135,7 +138,7 @@ async function syncGhsa() {
       records_synced: recordsSynced,
       error_message: err.message,
     });
-    console.error('[GHSA] Sync failed:', err.message);
+    logger.error('[GHSA] Sync failed: %s', err.message);
     throw err;
   }
 }

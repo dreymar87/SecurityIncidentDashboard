@@ -1,12 +1,14 @@
 const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
+const logger = require('../utils/logger');
+const { syncRecordsTotal } = require('../utils/metrics');
 
 const GN_BASE = 'https://api.greynoise.io/v3';
 
 async function syncGreyNoise() {
   const apiKey = process.env.GREYNOISE_API_KEY;
   if (!apiKey) {
-    console.warn('[GreyNoise] No API key set — skipping sync. Set GREYNOISE_API_KEY in .env');
+    logger.warn('[GreyNoise] No API key set — skipping sync. Set GREYNOISE_API_KEY in .env');
     return { success: false, reason: 'missing_api_key' };
   }
 
@@ -56,7 +58,8 @@ async function syncGreyNoise() {
     }
 
     await db('sync_log').insert({ source: 'greynoise', status: 'success', records_synced: recordsSynced });
-    console.log(`[GreyNoise] Synced ${recordsSynced} threat IPs in ${Date.now() - startTime}ms`);
+    syncRecordsTotal.labels('greynoise').inc(recordsSynced);
+    logger.info(`[GreyNoise] Synced ${recordsSynced} threat IPs in ${Date.now() - startTime}ms`);
     return { success: true, recordsSynced };
   } catch (err) {
     await db('sync_log').insert({
@@ -65,7 +68,7 @@ async function syncGreyNoise() {
       records_synced: recordsSynced,
       error_message: err.message,
     });
-    console.error('[GreyNoise] Sync failed:', err.message);
+    logger.error('[GreyNoise] Sync failed: %s', err.message);
     throw err;
   }
 }

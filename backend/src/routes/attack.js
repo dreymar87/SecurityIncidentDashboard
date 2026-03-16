@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const logger = require('../utils/logger');
 
 const TACTIC_ORDER = [
   'reconnaissance',
@@ -67,7 +68,7 @@ router.get('/', async (req, res) => {
 
     res.json(grouped);
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, 'Failed to fetch ATT&CK techniques');
     res.status(500).json({ error: 'Failed to fetch ATT&CK techniques' });
   }
 });

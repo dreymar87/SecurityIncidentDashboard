@@ -1,6 +1,8 @@
 const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
 const { generateAlerts } = require('../utils/alertGenerator');
+const logger = require('../utils/logger');
+const { syncRecordsTotal } = require('../utils/metrics');
 
 const OSV_API = 'https://api.osv.dev/v1/query';
 const ECOSYSTEMS = ['npm', 'PyPI', 'Go', 'Maven'];
@@ -114,8 +116,9 @@ async function syncOsv() {
       records_synced: recordsSynced,
     });
 
-    await generateAlerts('osv', syncedRecords).catch((e) => console.error('[OSV] Alert generation failed:', e.message));
-    console.log(`[OSV] Synced ${recordsSynced} vulnerabilities in ${Date.now() - startTime}ms`);
+    await generateAlerts('osv', syncedRecords).catch((e) => logger.error('[OSV] Alert generation failed: %s', e.message));
+    syncRecordsTotal.labels('osv').inc(recordsSynced);
+    logger.info(`[OSV] Synced ${recordsSynced} vulnerabilities in ${Date.now() - startTime}ms`);
     return { success: true, recordsSynced };
   } catch (err) {
     await db('sync_log').insert({
@@ -124,7 +127,7 @@ async function syncOsv() {
       records_synced: recordsSynced,
       error_message: err.message,
     });
-    console.error('[OSV] Sync failed:', err.message);
+    logger.error('[OSV] Sync failed: %s', err.message);
     throw err;
   }
 }

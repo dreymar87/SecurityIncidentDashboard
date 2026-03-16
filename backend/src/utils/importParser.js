@@ -1,6 +1,7 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const db = require('../db');
+const logger = require('./logger');
 
 // Field mapping: user column name -> internal field
 const VULN_FIELD_MAP = {
@@ -118,7 +119,7 @@ async function parseImportFile(filePath, format, type) {
         }
         imported++;
       } catch (err) {
-        console.warn('[Import] Skipped row:', err.message);
+        logger.warn('[Import] Skipped row: %s', err.message);
       }
     }
   });

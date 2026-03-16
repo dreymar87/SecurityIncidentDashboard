@@ -1,5 +1,7 @@
 const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
+const logger = require('../utils/logger');
+const { syncRecordsTotal } = require('../utils/metrics');
 
 const MITRE_STIX_URL =
   'https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json';
@@ -73,7 +75,8 @@ async function syncMitre() {
       records_synced: recordsSynced,
     });
 
-    console.log(`[MITRE] Synced ${recordsSynced} techniques in ${Date.now() - startTime}ms`);
+    syncRecordsTotal.labels('mitre').inc(recordsSynced);
+    logger.info(`[MITRE] Synced ${recordsSynced} techniques in ${Date.now() - startTime}ms`);
     return { success: true, recordsSynced };
   } catch (err) {
     await db('sync_log').insert({
@@ -82,7 +85,7 @@ async function syncMitre() {
       records_synced: recordsSynced,
       error_message: err.message,
     });
-    console.error('[MITRE] Sync failed:', err.message);
+    logger.error('[MITRE] Sync failed: %s', err.message);
     throw err;
   }
 }

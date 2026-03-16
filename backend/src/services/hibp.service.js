@@ -1,12 +1,14 @@
 const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
+const logger = require('../utils/logger');
+const { syncRecordsTotal } = require('../utils/metrics');
 
 const HIBP_BASE = 'https://haveibeenpwned.com/api/v3';
 
 async function syncHibpBreaches() {
   const apiKey = process.env.HIBP_API_KEY;
   if (!apiKey) {
-    console.warn('[HIBP] No API key set — skipping sync. Set HIBP_API_KEY in .env');
+    logger.warn('[HIBP] No API key set — skipping sync. Set HIBP_API_KEY in .env');
     return { success: false, reason: 'missing_api_key' };
   }
 
@@ -53,7 +55,8 @@ async function syncHibpBreaches() {
     }
 
     await db('sync_log').insert({ source: 'hibp', status: 'success', records_synced: recordsSynced });
-    console.log(`[HIBP] Synced ${recordsSynced} breaches in ${Date.now() - startTime}ms`);
+    syncRecordsTotal.labels('hibp').inc(recordsSynced);
+    logger.info(`[HIBP] Synced ${recordsSynced} breaches in ${Date.now() - startTime}ms`);
     return { success: true, recordsSynced };
   } catch (err) {
     await db('sync_log').insert({
@@ -62,7 +65,7 @@ async function syncHibpBreaches() {
       records_synced: recordsSynced,
       error_message: err.message,
     });
-    console.error('[HIBP] Sync failed:', err.message);
+    logger.error('[HIBP] Sync failed: %s', err.message);
     throw err;
   }
 }

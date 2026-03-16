@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const db = require('../db');
 const { parseImportFile } = require('../utils/importParser');
+const logger = require('../utils/logger');
 
 const upload = multer({
   dest: '/tmp/sid-imports/',
@@ -36,7 +37,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     }).returning('id');
     jobId = result.id;
   } catch (err) {
-    console.error('[Import] Failed to create job:', err.message);
+    logger.error('[Import] Failed to create job: %s', err.message);
     return res.status(500).json({ error: 'Failed to create import job' });
   }
 
@@ -60,7 +61,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         error_message: err.message,
         completed_at: new Date(),
       });
-      console.error('[Import] Failed:', err.message);
+      logger.error('[Import] Failed: %s', err.message);
     }
   });
 });
