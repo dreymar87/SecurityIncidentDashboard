@@ -13,6 +13,7 @@ router.get('/', async (req, res) => {
       severityDist,
       topBreachCountries,
       topVulnCountries,
+      topThreatCountries,
       recentActivity,
       lastSync,
     ] = await Promise.all([
@@ -44,6 +45,14 @@ router.get('/', async (req, res) => {
         ORDER BY count DESC
         LIMIT 10
       `),
+
+      db('threat_intel')
+        .select('country')
+        .count('id as count')
+        .whereNotNull('country')
+        .groupBy('country')
+        .orderBy('count', 'desc')
+        .limit(10),
 
       db.raw(`
         (SELECT 'vulnerability' AS type, cve_id AS identifier, severity AS detail,
@@ -79,6 +88,7 @@ router.get('/', async (req, res) => {
       severityDistribution: severityDist,
       topBreachCountries: topBreachCountries,
       topVulnCountries: topVulnCountries.rows,
+      topThreatCountries: topThreatCountries,
       recentActivity: recentActivity.rows,
       lastSync,
     });

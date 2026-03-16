@@ -18,7 +18,8 @@ const TYPE_CONFIG = {
   },
 } as const;
 
-function formatDetail(type: string, detail: string): React.ReactNode {
+function formatDetail(type: string, detail: string | null): React.ReactNode {
+  if (!detail) return <span className="text-gray-600">—</span>;
   if (type === 'vulnerability') {
     // detail is a severity string — render as a badge
     return <SeverityBadge severity={detail} />;
