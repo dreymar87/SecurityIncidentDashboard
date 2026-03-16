@@ -109,6 +109,8 @@ export interface VulnFilters {
   q?: string;
   page?: number;
   limit?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
 }
 
 export interface BreachFilters {
@@ -120,6 +122,8 @@ export interface BreachFilters {
   q?: string;
   page?: number;
   limit?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
 }
 
 export interface SettingsStatus {

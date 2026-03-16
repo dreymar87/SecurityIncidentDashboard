@@ -144,11 +144,11 @@ export function UserManagement({ onMobileMenuToggle, isMobile }: PageProps) {
               />
               <input
                 type="password"
-                placeholder="Password"
+                placeholder="Password (min 8 chars + number/symbol)"
                 value={newUser.password}
                 onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                 required
-                minLength={6}
+                minLength={8}
                 className="input text-sm"
               />
               <input
@@ -253,11 +253,11 @@ export function UserManagement({ onMobileMenuToggle, isMobile }: PageProps) {
               </h4>
               <input
                 type="password"
-                placeholder="New password (min 6 characters)"
+                placeholder="New password (min 8 chars + number/symbol)"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 className="input text-sm w-full"
                 autoFocus
               />

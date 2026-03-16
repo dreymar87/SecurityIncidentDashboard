@@ -12,8 +12,20 @@ interface PageProps {
 export function ThreatIntelPage({ onMobileMenuToggle, isMobile }: PageProps) {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState('risk_score');
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
 
-  const { data, isLoading } = useThreatIntel({ ...filters, page: String(page) });
+  const { data, isLoading } = useThreatIntel({ ...filters, page: String(page), sort, order });
+
+  function handleSort(field: string) {
+    if (field === sort) {
+      setOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSort(field);
+      setOrder('desc');
+    }
+    setPage(1);
+  }
 
   return (
     <div>
@@ -61,6 +73,9 @@ export function ThreatIntelPage({ onMobileMenuToggle, isMobile }: PageProps) {
             pages={data.pages}
             onPageChange={setPage}
             loading={isLoading}
+            sort={sort}
+            order={order}
+            onSort={handleSort}
           />
         ) : (
           <div className="card flex items-center justify-center h-48 text-gray-500">

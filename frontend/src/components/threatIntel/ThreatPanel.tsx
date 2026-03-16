@@ -1,5 +1,5 @@
 import { ThreatIntel } from '../../api/client';
-import { Wifi, ChevronLeft, ChevronRight, Radio } from 'lucide-react';
+import { Wifi, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Radio } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { EmptyState } from '../EmptyState';
 
@@ -10,6 +10,16 @@ interface ThreatPanelProps {
   pages: number;
   onPageChange: (page: number) => void;
   loading?: boolean;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
+}
+
+function SortIcon({ field, sort, order }: { field: string; sort?: string; order?: 'asc' | 'desc' }) {
+  if (sort === field) {
+    return order === 'asc' ? <ChevronUp className="w-3 h-3 shrink-0" /> : <ChevronDown className="w-3 h-3 shrink-0" />;
+  }
+  return <ChevronsUpDown className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-50" />;
 }
 
 function RiskBar({ score }: { score: number }) {
@@ -25,7 +35,7 @@ function RiskBar({ score }: { score: number }) {
   );
 }
 
-export function ThreatPanel({ data, total, page, pages, onPageChange, loading }: ThreatPanelProps) {
+export function ThreatPanel({ data, total, page, pages, onPageChange, loading, sort, order, onSort }: ThreatPanelProps) {
   return (
     <div className="card p-0 overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
@@ -43,9 +53,13 @@ export function ThreatPanel({ data, total, page, pages, onPageChange, loading }:
               <th scope="col" className="table-header px-4 py-3 text-left">Country</th>
               <th scope="col" className="table-header px-4 py-3 text-left">Organization</th>
               <th scope="col" className="table-header px-4 py-3 text-left">Tags</th>
-              <th scope="col" className="table-header px-4 py-3 text-left">Risk</th>
+              <th scope="col" className="table-header px-4 py-3 text-left cursor-pointer select-none group" onClick={() => onSort?.('risk_score')}>
+                <span className="flex items-center gap-1">Risk <SortIcon field="risk_score" sort={sort} order={order} /></span>
+              </th>
               <th scope="col" className="table-header px-4 py-3 text-left">Source</th>
-              <th scope="col" className="table-header px-4 py-3 text-left">Last Seen</th>
+              <th scope="col" className="table-header px-4 py-3 text-left cursor-pointer select-none group" onClick={() => onSort?.('last_seen')}>
+                <span className="flex items-center gap-1">Last Seen <SortIcon field="last_seen" sort={sort} order={order} /></span>
+              </th>
             </tr>
           </thead>
           <tbody className={loading ? 'opacity-50' : ''}>

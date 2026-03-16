@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require('../db');
 const logger = require('../utils/logger');
 
+const SORT_WHITELIST = new Set(['ip_address', 'country', 'org', 'risk_score', 'last_seen', 'source']);
+
 function sanitizePagination(rawPage, rawLimit) {
   const page = Math.max(1, parseInt(rawPage) || 1);
   const limit = Math.min(200, Math.max(1, parseInt(rawLimit) || 50));
@@ -15,6 +17,8 @@ router.get('/', async (req, res) => {
     const { country, source } = req.query;
     const q = req.query.q ? String(req.query.q).slice(0, 200) : undefined;
     const { page, limit } = sanitizePagination(req.query.page, req.query.limit);
+    const sort = SORT_WHITELIST.has(req.query.sort) ? req.query.sort : 'risk_score';
+    const order = req.query.order === 'asc' ? 'asc' : 'desc';
 
     let query = db('threat_intel');
 
@@ -37,7 +41,7 @@ router.get('/', async (req, res) => {
       query
         .select('id', 'source', 'ip_address', 'country', 'org',
           'open_ports', 'tags', 'risk_score', 'first_seen', 'last_seen')
-        .orderBy('risk_score', 'desc')
+        .orderBy(sort, order)
         .limit(limit)
         .offset(offset),
     ]);

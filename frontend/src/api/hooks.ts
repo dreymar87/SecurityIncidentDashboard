@@ -189,6 +189,22 @@ export function useUserPreferences() {
   });
 }
 
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) =>
+      api.put('/users/me/password', { currentPassword, newPassword }).then((r) => r.data),
+  });
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ email }: { email: string }) =>
+      api.put('/users/me/profile', { email }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['current-user'] }),
+  });
+}
+
 export function useUpdatePreferences() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ChevronLeft, ChevronRight, ExternalLink, Zap, Shield, ShieldOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, ExternalLink, Zap, Shield, ShieldOff } from 'lucide-react';
 import { Vulnerability } from '../../api/client';
 import { SeverityBadge } from './SeverityBadge';
 import { EmptyState } from '../EmptyState';
@@ -12,9 +12,19 @@ interface VulnTableProps {
   pages: number;
   onPageChange: (page: number) => void;
   loading?: boolean;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  onSort?: (field: string) => void;
 }
 
-export function VulnTable({ data, total, page, pages, onPageChange, loading }: VulnTableProps) {
+function SortIcon({ field, sort, order }: { field: string; sort?: string; order?: 'asc' | 'desc' }) {
+  if (sort === field) {
+    return order === 'asc' ? <ChevronUp className="w-3 h-3 shrink-0" /> : <ChevronDown className="w-3 h-3 shrink-0" />;
+  }
+  return <ChevronsUpDown className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-50" />;
+}
+
+export function VulnTable({ data, total, page, pages, onPageChange, loading, sort, order, onSort }: VulnTableProps) {
   const navigate = useNavigate();
 
   return (
@@ -35,13 +45,19 @@ export function VulnTable({ data, total, page, pages, onPageChange, loading }: V
         <table className="w-full min-w-[700px]">
           <thead>
             <tr className="border-b border-gray-800">
-              <th scope="col" className="table-header px-4 py-3 text-left">CVE ID</th>
+              <th scope="col" className="table-header px-4 py-3 text-left cursor-pointer select-none group" onClick={() => onSort?.('cve_id')}>
+                <span className="flex items-center gap-1">CVE ID <SortIcon field="cve_id" sort={sort} order={order} /></span>
+              </th>
               <th scope="col" className="table-header px-4 py-3 text-left">Severity</th>
-              <th scope="col" className="table-header px-4 py-3 text-left">CVSS</th>
+              <th scope="col" className="table-header px-4 py-3 text-left cursor-pointer select-none group" onClick={() => onSort?.('cvss_score')}>
+                <span className="flex items-center gap-1">CVSS <SortIcon field="cvss_score" sort={sort} order={order} /></span>
+              </th>
               <th scope="col" className="table-header px-4 py-3 text-left">Title</th>
               <th scope="col" className="table-header px-4 py-3 text-left">Source</th>
               <th scope="col" className="table-header px-4 py-3 text-left">Flags</th>
-              <th scope="col" className="table-header px-4 py-3 text-left">Published</th>
+              <th scope="col" className="table-header px-4 py-3 text-left cursor-pointer select-none group" onClick={() => onSort?.('published_at')}>
+                <span className="flex items-center gap-1">Published <SortIcon field="published_at" sort={sort} order={order} /></span>
+              </th>
             </tr>
           </thead>
           <tbody className={loading ? 'opacity-50' : ''}>
