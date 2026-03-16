@@ -1,9 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Activity, Crosshair, X, Users, LogOut
+  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Activity, Crosshair, X, Users, LogOut, LogIn
 } from 'lucide-react';
-import { useCurrentUser } from '../../api/hooks';
-import { api } from '../../api/client';
+import { useCurrentUser, useLogout } from '../../api/hooks';
 
 const baseNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -23,6 +22,7 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) {
   const { data: currentUser } = useCurrentUser();
+  const logout = useLogout();
   const isAdmin = currentUser?.role === 'admin';
 
   const navItems = [
@@ -32,7 +32,7 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) 
 
   async function handleLogout() {
     try {
-      await api.post('/auth/logout');
+      await logout.mutateAsync();
       window.location.reload();
     } catch { /* ignore */ }
   }
@@ -114,6 +114,15 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) 
                 <LogOut size={14} />
               </button>
             </div>
+          )}
+          {!collapsed && !currentUser && (
+            <NavLink
+              to="/login"
+              className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition-colors mb-3"
+            >
+              <LogIn size={12} />
+              <span>Log in</span>
+            </NavLink>
           )}
           {!collapsed && (
             <div className="flex items-center gap-2 text-xs text-gray-500">

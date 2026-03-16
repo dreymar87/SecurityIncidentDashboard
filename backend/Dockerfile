@@ -11,4 +11,4 @@ RUN mkdir -p /tmp/sid-imports
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "node src/db/migrate.js && node src/index.js"]
+CMD ["sh", "-c", "node src/db/migrate.js && node src/db/seed-admin.js && node src/index.js"]
