@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
-const { authenticator } = require('otplib');
+const { generateSecret: totpGenerateSecret, generateURI: totpGenerateURI, verify: totpVerify } = require('otplib');
 const QRCode = require('qrcode');
 const db = require('../db');
 const logger = require('../utils/logger');
@@ -156,7 +156,7 @@ router.post('/mfa/challenge', async (req, res) => {
     }
 
     const secret = decryptTotpSecret(user.totp_secret);
-    const isValid = authenticator.check(token, secret);
+    const { valid: isValid } = await totpVerify({ token, secret, algorithm: 'SHA1', digits: 6, period: 30 });
 
     if (!isValid) {
       // Track MFA failures in failed_login_attempts table using prefixed username
@@ -194,8 +194,8 @@ router.post('/mfa/enroll', async (req, res) => {
 
   try {
     const user = await db('users').where('id', req.user.id).select('username').first();
-    const secret = authenticator.generateSecret();
-    const otpauthUrl = authenticator.keyuri(user.username, 'SecurityDashboard', secret);
+    const secret = totpGenerateSecret();
+    const otpauthUrl = totpGenerateURI({ secret, label: user.username, issuer: 'SecurityDashboard', algorithm: 'SHA1', digits: 6, period: 30 });
     const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
 
     // Store encrypted secret (not yet enabled — enabled after verify)
@@ -228,7 +228,7 @@ router.post('/mfa/verify', async (req, res) => {
     }
 
     const secret = decryptTotpSecret(user.totp_secret);
-    const isValid = authenticator.check(token, secret);
+    const { valid: isValid } = await totpVerify({ token, secret, algorithm: 'SHA1', digits: 6, period: 30 });
 
     if (!isValid) {
       return res.status(400).json({ error: 'Invalid TOTP code. Please try again.' });
