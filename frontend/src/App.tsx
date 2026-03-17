@@ -37,7 +37,7 @@ export default function App() {
   const pageProps = { onMobileMenuToggle: () => setMobileOpen(true), isMobile };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <Sidebar collapsed={collapsed} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
       <main id="main-content" className="flex-1 overflow-auto min-w-0">

@@ -53,7 +53,7 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) 
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
           fixed inset-y-0 left-0 z-50 md:translate-x-0 md:static md:z-auto
           ${collapsed ? 'md:w-16' : 'md:w-60'}
-          w-60 min-h-screen bg-gray-900 border-r border-gray-800 flex flex-col
+          w-60 h-screen bg-gray-900 border-r border-gray-800 flex flex-col
           transition-all duration-200 ease-in-out shrink-0
         `}
       >
@@ -79,7 +79,7 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) 
           </div>
         </div>
 
-        <nav aria-label="Main navigation" className={`flex-1 py-4 space-y-1 ${collapsed ? 'px-2' : 'px-3'}`}>
+        <nav aria-label="Main navigation" className={`flex-1 overflow-y-auto py-4 space-y-1 ${collapsed ? 'px-2' : 'px-3'}`}>
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}

@@ -1,10 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bell } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAlerts, useUnreadAlertCount } from '../../api/hooks';
 import { api } from '../../api/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
+import type { Alert } from '../../api/client';
+
+function getAlertPath(alert: Alert): string {
+  const type = (alert.type ?? '').toLowerCase();
+  if (alert.reference_id) {
+    if (type.includes('cve') || type.includes('vuln')) {
+      return `/vulnerabilities/${alert.reference_id}`;
+    }
+    if (type.includes('breach')) {
+      return `/breaches/${alert.reference_id}`;
+    }
+  }
+  return '/notifications';
+}
 
 export function AlertBell() {
   const [open, setOpen] = useState(false);
@@ -12,6 +26,7 @@ export function AlertBell() {
   const { data: alerts } = useAlerts();
   const { data: unread } = useUnreadAlertCount();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const count = unread?.count ?? 0;
 
   useEffect(() => {
@@ -30,21 +45,25 @@ export function AlertBell() {
     queryClient.invalidateQueries({ queryKey: ['alerts-unread'] });
   }
 
-  async function markRead(id: number) {
-    await api.patch(`/alerts/${id}/read`);
-    queryClient.invalidateQueries({ queryKey: ['alerts'] });
-    queryClient.invalidateQueries({ queryKey: ['alerts-unread'] });
+  async function handleAlertClick(alert: Alert) {
+    if (!alert.read) {
+      await api.patch(`/alerts/${alert.id}/read`);
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['alerts-unread'] });
+    }
+    setOpen(false);
+    navigate(getAlertPath(alert));
   }
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="p-1.5 rounded-lg transition-colors hover:bg-gray-800 relative"
+        className="icon-btn relative"
         aria-label={count > 0 ? `Alerts (${count} unread)` : 'Alerts'}
         aria-expanded={open}
       >
-        <Bell size={15} className="text-gray-400" />
+        <Bell size={15} />
         {count > 0 && (
           <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
             {count > 9 ? '9+' : count}
@@ -87,7 +106,7 @@ export function AlertBell() {
               {alerts.slice(0, 20).map((alert) => (
                 <button
                   key={alert.id}
-                  onClick={() => !alert.read && markRead(alert.id)}
+                  onClick={() => handleAlertClick(alert)}
                   className="w-full text-left px-4 py-3 border-b transition-colors hover:opacity-80"
                   style={{
                     borderColor: 'var(--color-border)',
