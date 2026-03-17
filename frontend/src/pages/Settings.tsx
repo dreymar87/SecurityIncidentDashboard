@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { TopBar } from '../components/layout/TopBar';
-import { useSettings, useCurrentUser, useUserPreferences, useUpdatePreferences, useAuditLog, useChangePassword, useUpdateProfile } from '../api/hooks';
+import { useSettings, useCurrentUser, useUserPreferences, useUpdatePreferences, useAuditLog, useChangePassword, useUpdateProfile, useRiskWeights, useUpdateRiskWeights } from '../api/hooks';
 import { api } from '../api/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { RefreshCw, CheckCircle, XCircle, Clock, Key, Bell, ChevronLeft, ChevronRight, User, Lock } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, Clock, Key, Bell, ChevronLeft, ChevronRight, User, Lock, BarChart2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -63,6 +63,19 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [pwMsg, setPwMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const { data: riskWeights } = useRiskWeights();
+  const updateRiskWeights = useUpdateRiskWeights();
+  const [riskForm, setRiskForm] = useState<{ cvss: string; exploit: string; kev: string } | null>(null);
+  const [riskMsg, setRiskMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const activeRisk = riskForm ?? {
+    cvss: String(riskWeights?.cvss ?? 0.6),
+    exploit: String(riskWeights?.exploit ?? 0.25),
+    kev: String(riskWeights?.kev ?? 0.15),
+  };
+  const riskSum = (parseFloat(activeRisk.cvss) || 0) + (parseFloat(activeRisk.exploit) || 0) + (parseFloat(activeRisk.kev) || 0);
+  const riskSumOk = Math.abs(riskSum - 1.0) <= 0.01;
+
   const isAdmin = currentUser?.role === 'admin';
 
   async function triggerSync(source: string) {
@@ -108,6 +121,24 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to change password';
       setPwMsg({ type: 'error', text: msg });
+    }
+  }
+
+  async function handleRiskWeightsSave(e: React.FormEvent) {
+    e.preventDefault();
+    setRiskMsg(null);
+    const weights = {
+      cvss: parseFloat(activeRisk.cvss),
+      exploit: parseFloat(activeRisk.exploit),
+      kev: parseFloat(activeRisk.kev),
+    };
+    try {
+      await updateRiskWeights.mutateAsync(weights);
+      setRiskMsg({ type: 'success', text: 'Risk weights saved. Recalculating scores in background.' });
+      setRiskForm(null);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to save risk weights';
+      setRiskMsg({ type: 'error', text: msg });
     }
   }
 
@@ -317,6 +348,60 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
                 </div>
                 <button type="submit" disabled={changePassword.isPending} className="btn-primary text-xs py-1.5 self-start">
                   {changePassword.isPending ? 'Changing...' : 'Change Password'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Risk Score Weights (admin only) */}
+        {isAdmin && (
+          <div>
+            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+              <BarChart2 size={14} />
+              Risk Score Weights
+            </h3>
+            <div className="card p-4">
+              <p className="text-xs mb-3" style={{ color: 'var(--color-text-faint)' }}>
+                Customize how vulnerability risk scores are calculated. Weights must sum to 1.0.
+                Risk score = (CVSS × weight) + (Exploit bonus × weight) + (KEV bonus × weight), clamped to 0–10.
+              </p>
+              {riskMsg && (
+                <div className={`mb-3 text-xs px-3 py-2 rounded-lg border ${riskMsg.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                  {riskMsg.text}
+                </div>
+              )}
+              <form onSubmit={handleRiskWeightsSave} className="flex flex-col gap-3">
+                {[
+                  { key: 'cvss', label: 'CVSS Score Weight', hint: 'Weight of the CVSS base score (0–10)' },
+                  { key: 'exploit', label: 'Exploit Available Weight', hint: 'Bonus weight when an exploit is known' },
+                  { key: 'kev', label: 'CISA KEV Weight', hint: 'Bonus weight for actively exploited (CISA KEV)' },
+                ].map(({ key, label, hint }) => (
+                  <div key={key}>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
+                      {label}
+                    </label>
+                    <input
+                      type="number"
+                      className="input w-32 text-sm"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={activeRisk[key as keyof typeof activeRisk]}
+                      onChange={(e) => setRiskForm({ ...activeRisk, [key]: e.target.value })}
+                    />
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-faint)' }}>{hint}</p>
+                  </div>
+                ))}
+                <div className={`text-xs font-mono ${riskSumOk ? 'text-green-400' : 'text-red-400'}`}>
+                  Sum: {riskSum.toFixed(2)} {riskSumOk ? '✓' : '(must equal 1.00)'}
+                </div>
+                <button
+                  type="submit"
+                  disabled={!riskSumOk || updateRiskWeights.isPending}
+                  className="btn-primary text-xs py-1.5 self-start disabled:opacity-50"
+                >
+                  {updateRiskWeights.isPending ? 'Saving...' : 'Save Weights'}
                 </button>
               </form>
             </div>

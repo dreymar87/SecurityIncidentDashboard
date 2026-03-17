@@ -45,6 +45,7 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) 
       )}
 
       <aside
+        id="sidebar"
         className={`
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
           fixed inset-y-0 left-0 z-50 md:translate-x-0 md:static md:z-auto

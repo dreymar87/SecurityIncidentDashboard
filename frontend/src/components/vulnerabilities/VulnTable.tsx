@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, Exte
 import { Vulnerability } from '../../api/client';
 import { SeverityBadge } from './SeverityBadge';
 import { EmptyState } from '../EmptyState';
+import TriageBadge from './TriageBadge';
+import WatchButton from './WatchButton';
 
 interface VulnTableProps {
   data: Vulnerability[];
@@ -24,6 +26,17 @@ function SortIcon({ field, sort, order }: { field: string; sort?: string; order?
   return <ChevronsUpDown className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-50" />;
 }
 
+function RiskScoreBadge({ score }: { score: number | null }) {
+  if (score == null) return <span className="text-gray-600">—</span>;
+  const n = Number(score);
+  const colorClass = n >= 8 ? 'bg-red-900 text-red-300' : n >= 5 ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300';
+  return (
+    <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-mono font-semibold ${colorClass}`}>
+      {n.toFixed(1)}
+    </span>
+  );
+}
+
 export function VulnTable({ data, total, page, pages, onPageChange, loading, sort, order, onSort }: VulnTableProps) {
   const navigate = useNavigate();
 
@@ -42,15 +55,22 @@ export function VulnTable({ data, total, page, pages, onPageChange, loading, sor
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[700px]">
+        <table className="w-full min-w-[800px]">
           <thead>
             <tr className="border-b border-gray-800">
+              <th scope="col" className="table-header px-2 py-3 w-8" aria-label="Watch"></th>
               <th scope="col" className="table-header px-4 py-3 text-left cursor-pointer select-none group" onClick={() => onSort?.('cve_id')}>
                 <span className="flex items-center gap-1">CVE ID <SortIcon field="cve_id" sort={sort} order={order} /></span>
               </th>
               <th scope="col" className="table-header px-4 py-3 text-left">Severity</th>
               <th scope="col" className="table-header px-4 py-3 text-left cursor-pointer select-none group" onClick={() => onSort?.('cvss_score')}>
                 <span className="flex items-center gap-1">CVSS <SortIcon field="cvss_score" sort={sort} order={order} /></span>
+              </th>
+              <th scope="col" className="table-header px-4 py-3 text-left cursor-pointer select-none group" onClick={() => onSort?.('risk_score')}>
+                <span className="flex items-center gap-1">Risk <SortIcon field="risk_score" sort={sort} order={order} /></span>
+              </th>
+              <th scope="col" className="table-header px-4 py-3 text-left cursor-pointer select-none group" onClick={() => onSort?.('triage_status')}>
+                <span className="flex items-center gap-1">Triage <SortIcon field="triage_status" sort={sort} order={order} /></span>
               </th>
               <th scope="col" className="table-header px-4 py-3 text-left">Title</th>
               <th scope="col" className="table-header px-4 py-3 text-left">Source</th>
@@ -63,7 +83,7 @@ export function VulnTable({ data, total, page, pages, onPageChange, loading, sor
           <tbody className={loading ? 'opacity-50' : ''}>
             {data.length === 0 && (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={10}>
                   <EmptyState
                     icon={ShieldOff}
                     title="No vulnerabilities found"
@@ -78,6 +98,9 @@ export function VulnTable({ data, total, page, pages, onPageChange, loading, sor
                 className="table-row cursor-pointer"
                 onClick={() => navigate(`/vulnerabilities/${vuln.cve_id}`)}
               >
+                <td className="table-cell px-2" onClick={(e) => e.stopPropagation()}>
+                  <WatchButton cveId={vuln.cve_id} />
+                </td>
                 <td className="table-cell">
                   <span className="font-mono text-sky-400 text-xs hover:text-sky-300">
                     {vuln.cve_id}
@@ -88,6 +111,12 @@ export function VulnTable({ data, total, page, pages, onPageChange, loading, sor
                 </td>
                 <td className="table-cell font-mono text-xs">
                   {vuln.cvss_score != null ? Number(vuln.cvss_score).toFixed(1) : '—'}
+                </td>
+                <td className="table-cell">
+                  <RiskScoreBadge score={vuln.risk_score} />
+                </td>
+                <td className="table-cell">
+                  <TriageBadge status={vuln.triage_status ?? 'new'} />
                 </td>
                 <td className="table-cell max-w-xs">
                   <span className="truncate block text-gray-300">
