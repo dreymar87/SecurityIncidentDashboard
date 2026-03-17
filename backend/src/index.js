@@ -48,6 +48,7 @@ const usersRouter = require('./routes/users');
 const auditLogRouter = require('./routes/auditLog');
 const vulnerabilityNotesRouter = require('./routes/vulnerabilityNotes');
 const watchlistRouter = require('./routes/watchlist');
+const notificationChannelsRouter = require('./routes/notificationChannels');
 const { startScheduler } = require('./jobs/scheduler');
 const { recalculateAllRiskScores } = require('./utils/riskScore');
 
@@ -141,6 +142,7 @@ app.use('/api/alerts', alertsRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/audit-log', auditLogRouter);
+app.use('/api/notification-channels', notificationChannelsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 

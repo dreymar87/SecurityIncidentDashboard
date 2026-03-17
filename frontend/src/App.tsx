@@ -11,6 +11,7 @@ import { Import } from './pages/Import';
 import { Settings } from './pages/Settings';
 import { Attack } from './pages/Attack';
 import { UserManagement } from './pages/UserManagement';
+import { Notifications } from './pages/Notifications';
 import { Login } from './pages/Login';
 
 function useViewport() {
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/settings" element={<Settings {...pageProps} />} />
           <Route path="/attack" element={<Attack {...pageProps} />} />
           <Route path="/admin/users" element={<UserManagement {...pageProps} />} />
+          <Route path="/notifications" element={<Notifications {...pageProps} />} />
           <Route path="/login" element={<Login />} />
         </Routes>
       </main>

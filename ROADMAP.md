@@ -10,9 +10,9 @@ This document tracks planned features and improvements. Items are grouped by pha
 
 | Status | ID | Feature | Description |
 |--------|-----|---------|-------------|
-| ⬜ | P7-1 | **Webhook / notification alerts** | Push alerts to Slack, Teams, PagerDuty, or SMTP email when new critical CVEs or breaches are detected. Configurable per-channel in Settings. |
-| ⬜ | P7-2 | **Notification center** | Full alert history page replacing the bell-icon-only view. Filterable by severity, source, date. |
-| ⬜ | P7-3 | **Failed login alerting** | Auto-create an alert after N failed login attempts from a username or IP. |
+| ✅ | P7-1 | **Webhook / notification alerts** | Push alerts to Slack, Teams, PagerDuty, or SMTP email when new critical CVEs or breaches are detected. Configurable per-channel in Settings. |
+| ✅ | P7-2 | **Notification center** | Full alert history page replacing the bell-icon-only view. Filterable by severity, source, date. |
+| ✅ | P7-3 | **Failed login alerting** | Auto-create an alert after N failed login attempts from a username or IP. |
 
 ---
 

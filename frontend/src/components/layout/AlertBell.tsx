@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bell } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAlerts, useUnreadAlertCount } from '../../api/hooks';
 import { api } from '../../api/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -58,14 +59,23 @@ export function AlertBell() {
         >
           <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
             <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Alerts</span>
-            {count > 0 && (
-              <button
-                onClick={markAllRead}
-                className="text-xs text-sky-400 hover:text-sky-300"
+            <div className="flex items-center gap-3">
+              {count > 0 && (
+                <button
+                  onClick={markAllRead}
+                  className="text-xs text-sky-400 hover:text-sky-300"
+                >
+                  Mark all read
+                </button>
+              )}
+              <Link
+                to="/notifications"
+                onClick={() => setOpen(false)}
+                className="text-xs text-gray-400 hover:text-gray-200"
               >
-                Mark all read
-              </button>
-            )}
+                View all →
+              </Link>
+            </div>
           </div>
 
           {!alerts || alerts.length === 0 ? (

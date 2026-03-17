@@ -1,8 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Activity, Crosshair, X, Users, LogOut, LogIn
+  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Crosshair, X, Users, LogOut, LogIn, Bell, Activity
 } from 'lucide-react';
-import { useCurrentUser, useLogout } from '../../api/hooks';
+import { useCurrentUser, useLogout, useUnreadAlertCount } from '../../api/hooks';
 
 const baseNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -10,6 +10,7 @@ const baseNavItems = [
   { to: '/breaches', icon: AlertTriangle, label: 'Data Breaches' },
   { to: '/threat-intel', icon: Radar, label: 'Threat Intel' },
   { to: '/attack', icon: Crosshair, label: 'ATT&CK' },
+  { to: '/notifications', icon: Bell, label: 'Notifications' },
   { to: '/import', icon: Upload, label: 'Import Data' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
@@ -23,7 +24,9 @@ interface SidebarProps {
 export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) {
   const { data: currentUser } = useCurrentUser();
   const logout = useLogout();
+  const { data: unread } = useUnreadAlertCount();
   const isAdmin = currentUser?.role === 'admin';
+  const unreadCount = unread?.count ?? 0;
 
   const navItems = [
     ...baseNavItems,
@@ -83,7 +86,7 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) 
               to={to}
               end={to === '/'}
               onClick={onMobileClose}
-              aria-label={collapsed ? label : undefined}
+              aria-label={collapsed ? (label === 'Notifications' && unreadCount > 0 ? `${label} (${unreadCount} unread)` : label) : undefined}
               title={collapsed ? label : undefined}
               className={({ isActive }) =>
                 `flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${collapsed ? 'px-0 py-2.5' : 'px-3 py-2.5'} rounded-lg text-sm font-medium transition-colors ${
@@ -93,8 +96,20 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) 
                 }`
               }
             >
-              <Icon size={17} />
+              <span className="relative shrink-0">
+                <Icon size={17} />
+                {label === 'Notifications' && unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </span>
               {!collapsed && label}
+              {!collapsed && label === 'Notifications' && unreadCount > 0 && (
+                <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

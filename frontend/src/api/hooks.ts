@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, authApi, DashboardStats, TrendData, SearchResults, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert, User, UserPreferences, AuditLogEntry, RiskWeights, VulnerabilityNote } from './client';
+import { api, authApi, DashboardStats, TrendData, SearchResults, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert, AlertFilters, PaginatedAlerts, User, UserPreferences, AuditLogEntry, RiskWeights, VulnerabilityNote, NotificationChannel } from './client';
 
 export function useStats() {
   return useQuery<DashboardStats>({
@@ -320,5 +320,80 @@ export function useImportJobs() {
       const hasActive = jobs.some((j) => j.status === 'pending' || j.status === 'processing');
       return hasActive ? 3000 : false;
     },
+  });
+}
+
+export function useAlertsFeed(filters: AlertFilters = {}) {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== '')
+  );
+  return useQuery<PaginatedAlerts>({
+    queryKey: ['alerts-feed', params],
+    queryFn: () => api.get('/alerts', { params: { ...params, page: params.page || 1, limit: params.limit || 50 } }).then((r) => r.data),
+    placeholderData: (prev) => prev,
+    refetchInterval: 60 * 1000,
+  });
+}
+
+export function useMarkAlertRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (alertId: number) => api.patch(`/alerts/${alertId}/read`).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alerts-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['alerts-unread'] });
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+    },
+  });
+}
+
+export function useMarkAllAlertsRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.patch('/alerts/read-all').then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alerts-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['alerts-unread'] });
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+    },
+  });
+}
+
+export function useNotificationChannels() {
+  return useQuery<NotificationChannel[]>({
+    queryKey: ['notification-channels'],
+    queryFn: () => api.get('/notification-channels').then((r) => r.data),
+  });
+}
+
+export function useCreateNotificationChannel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Omit<NotificationChannel, 'id' | 'created_at' | 'updated_at'>) =>
+      api.post('/notification-channels', data).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notification-channels'] }),
+  });
+}
+
+export function useUpdateNotificationChannel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<NotificationChannel> & { id: number }) =>
+      api.put(`/notification-channels/${id}`, data).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notification-channels'] }),
+  });
+}
+
+export function useDeleteNotificationChannel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/notification-channels/${id}`).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notification-channels'] }),
+  });
+}
+
+export function useTestNotificationChannel() {
+  return useMutation({
+    mutationFn: (id: number) => api.post(`/notification-channels/${id}/test`).then((r) => r.data),
   });
 }

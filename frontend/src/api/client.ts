@@ -215,3 +215,31 @@ export interface AuditLogEntry {
   ip_address: string | null;
   created_at: string;
 }
+
+export interface NotificationChannel {
+  id: number;
+  name: string;
+  type: 'slack' | 'teams' | 'pagerduty' | 'smtp';
+  config: Record<string, string>;
+  enabled: boolean;
+  severity_threshold: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'ALL';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AlertFilters {
+  severity?: string;
+  source?: string;
+  from?: string;
+  to?: string;
+  read?: 'true' | 'false';
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedAlerts {
+  alerts: Alert[];
+  total: number;
+  page: number;
+  limit: number;
+}

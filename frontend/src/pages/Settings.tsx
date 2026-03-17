@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { TopBar } from '../components/layout/TopBar';
-import { useSettings, useCurrentUser, useUserPreferences, useUpdatePreferences, useAuditLog, useChangePassword, useUpdateProfile, useRiskWeights, useUpdateRiskWeights } from '../api/hooks';
+import { useSettings, useCurrentUser, useUserPreferences, useUpdatePreferences, useAuditLog, useChangePassword, useUpdateProfile, useRiskWeights, useUpdateRiskWeights, useNotificationChannels, useCreateNotificationChannel, useUpdateNotificationChannel, useDeleteNotificationChannel, useTestNotificationChannel } from '../api/hooks';
+import { NotificationChannel } from '../api/client';
 import { api } from '../api/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { RefreshCw, CheckCircle, XCircle, Clock, Key, Bell, ChevronLeft, ChevronRight, User, Lock, BarChart2 } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, Clock, Key, Bell, ChevronLeft, ChevronRight, User, Lock, BarChart2, Plus, Trash2, Send, Webhook } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -68,6 +69,23 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
   const [riskForm, setRiskForm] = useState<{ cvss: string; exploit: string; kev: string } | null>(null);
   const [riskMsg, setRiskMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Notification channels
+  const { data: channels } = useNotificationChannels();
+  const createChannel = useCreateNotificationChannel();
+  const updateChannel = useUpdateNotificationChannel();
+  const deleteChannel = useDeleteNotificationChannel();
+  const testChannel = useTestNotificationChannel();
+  const [showChannelForm, setShowChannelForm] = useState(false);
+  const [channelForm, setChannelForm] = useState<{
+    name: string; type: NotificationChannel['type']; enabled: boolean;
+    severity_threshold: NotificationChannel['severity_threshold'];
+    webhook_url: string; routing_key: string;
+    smtp_host: string; smtp_port: string; smtp_user: string; smtp_pass: string; smtp_from: string; smtp_to: string;
+  }>({ name: '', type: 'slack', enabled: true, severity_threshold: 'CRITICAL', webhook_url: '', routing_key: '', smtp_host: '', smtp_port: '587', smtp_user: '', smtp_pass: '', smtp_from: '', smtp_to: '' });
+  const [channelMsg, setChannelMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [testingId, setTestingId] = useState<number | null>(null);
+  const [testMsg, setTestMsg] = useState<Record<number, { type: 'success' | 'error'; text: string }>>({});
+
   const activeRisk = riskForm ?? {
     cvss: String(riskWeights?.cvss ?? 0.6),
     exploit: String(riskWeights?.exploit ?? 0.25),
@@ -121,6 +139,56 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to change password';
       setPwMsg({ type: 'error', text: msg });
+    }
+  }
+
+  async function handleChannelSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setChannelMsg(null);
+    const config: Record<string, string> = {};
+    if (channelForm.type === 'slack' || channelForm.type === 'teams') {
+      config.webhook_url = channelForm.webhook_url;
+    } else if (channelForm.type === 'pagerduty') {
+      config.routing_key = channelForm.routing_key;
+    } else if (channelForm.type === 'smtp') {
+      config.host = channelForm.smtp_host;
+      config.port = channelForm.smtp_port;
+      config.user = channelForm.smtp_user;
+      config.pass = channelForm.smtp_pass;
+      config.from = channelForm.smtp_from;
+      config.to = channelForm.smtp_to;
+    }
+    try {
+      await createChannel.mutateAsync({ name: channelForm.name, type: channelForm.type, config, enabled: channelForm.enabled, severity_threshold: channelForm.severity_threshold });
+      setChannelMsg({ type: 'success', text: 'Channel created successfully.' });
+      setShowChannelForm(false);
+      setChannelForm({ name: '', type: 'slack', enabled: true, severity_threshold: 'CRITICAL', webhook_url: '', routing_key: '', smtp_host: '', smtp_port: '587', smtp_user: '', smtp_pass: '', smtp_from: '', smtp_to: '' });
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to create channel';
+      setChannelMsg({ type: 'error', text: msg });
+    }
+  }
+
+  async function handleToggleChannel(id: number, enabled: boolean) {
+    await updateChannel.mutateAsync({ id, enabled });
+  }
+
+  async function handleDeleteChannel(id: number) {
+    if (!confirm('Delete this notification channel?')) return;
+    await deleteChannel.mutateAsync(id);
+  }
+
+  async function handleTestChannel(id: number) {
+    setTestingId(id);
+    setTestMsg((m) => ({ ...m, [id]: { type: 'success', text: 'Sending...' } }));
+    try {
+      await testChannel.mutateAsync(id);
+      setTestMsg((m) => ({ ...m, [id]: { type: 'success', text: 'Test sent!' } }));
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Test failed';
+      setTestMsg((m) => ({ ...m, [id]: { type: 'error', text: msg } }));
+    } finally {
+      setTestingId(null);
     }
   }
 
@@ -404,6 +472,170 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
                   {updateRiskWeights.isPending ? 'Saving...' : 'Save Weights'}
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Notification Channels (admin only) */}
+        {isAdmin && (
+          <div>
+            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+              <Webhook size={14} />
+              Notification Channels
+            </h3>
+            <div className="card p-4 space-y-4">
+              <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>
+                Configure outbound alerts to Slack, Teams, PagerDuty, or email when critical events are detected.
+              </p>
+
+              {channelMsg && (
+                <div className={`text-xs px-3 py-2 rounded-lg border ${channelMsg.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                  {channelMsg.text}
+                </div>
+              )}
+
+              {/* Existing channels */}
+              {channels && channels.length > 0 && (
+                <div className="space-y-2">
+                  {channels.map((ch) => (
+                    <div
+                      key={ch.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border"
+                      style={{ borderColor: 'var(--color-border)' }}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{ch.name}</span>
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 uppercase">{ch.type}</span>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${ch.enabled ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-gray-700 text-gray-500 border-gray-600'}`}>
+                            {ch.enabled ? 'Active' : 'Disabled'}
+                          </span>
+                          <span className="text-[10px] text-gray-500">min: {ch.severity_threshold}</span>
+                        </div>
+                        {testMsg[ch.id] && (
+                          <p className={`text-xs mt-0.5 ${testMsg[ch.id].type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                            {testMsg[ch.id].text}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleToggleChannel(ch.id, !ch.enabled)}
+                        className="text-xs px-2 py-1 rounded border transition-colors hover:opacity-80"
+                        style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                      >
+                        {ch.enabled ? 'Disable' : 'Enable'}
+                      </button>
+                      <button
+                        onClick={() => handleTestChannel(ch.id)}
+                        disabled={testingId === ch.id}
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-sky-500/30 text-sky-400 hover:bg-sky-500/10 transition-colors disabled:opacity-50"
+                        title="Send test notification"
+                      >
+                        <Send size={11} />
+                        Test
+                      </button>
+                      <button
+                        onClick={() => handleDeleteChannel(ch.id)}
+                        className="text-red-400 hover:text-red-300 p-1 rounded hover:bg-red-500/10 transition-colors"
+                        title="Delete channel"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!showChannelForm ? (
+                <button
+                  onClick={() => setShowChannelForm(true)}
+                  className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg border border-dashed transition-colors hover:opacity-80"
+                  style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                >
+                  <Plus size={14} />
+                  Add notification channel
+                </button>
+              ) : (
+                <form onSubmit={handleChannelSubmit} className="border rounded-lg p-4 space-y-3" style={{ borderColor: 'var(--color-border)' }}>
+                  <h4 className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>New Channel</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Channel name</label>
+                      <input className="input w-full text-sm" placeholder="e.g. #security-alerts" value={channelForm.name} onChange={(e) => setChannelForm((f) => ({ ...f, name: e.target.value }))} required />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Type</label>
+                      <select className="input w-full text-sm" value={channelForm.type} onChange={(e) => setChannelForm((f) => ({ ...f, type: e.target.value as NotificationChannel['type'] }))}>
+                        <option value="slack">Slack</option>
+                        <option value="teams">Microsoft Teams</option>
+                        <option value="pagerduty">PagerDuty</option>
+                        <option value="smtp">Email (SMTP)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Min severity</label>
+                      <select className="input w-full text-sm" value={channelForm.severity_threshold} onChange={(e) => setChannelForm((f) => ({ ...f, severity_threshold: e.target.value as NotificationChannel['severity_threshold'] }))}>
+                        <option value="CRITICAL">Critical only</option>
+                        <option value="HIGH">High and above</option>
+                        <option value="MEDIUM">Medium and above</option>
+                        <option value="LOW">All severities</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {(channelForm.type === 'slack' || channelForm.type === 'teams') && (
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Webhook URL</label>
+                      <input className="input w-full text-sm" type="url" placeholder="https://hooks.slack.com/..." value={channelForm.webhook_url} onChange={(e) => setChannelForm((f) => ({ ...f, webhook_url: e.target.value }))} required />
+                    </div>
+                  )}
+
+                  {channelForm.type === 'pagerduty' && (
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Routing Key</label>
+                      <input className="input w-full text-sm" placeholder="PagerDuty integration routing key" value={channelForm.routing_key} onChange={(e) => setChannelForm((f) => ({ ...f, routing_key: e.target.value }))} required />
+                    </div>
+                  )}
+
+                  {channelForm.type === 'smtp' && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>SMTP Host</label>
+                        <input className="input w-full text-sm" placeholder="smtp.example.com" value={channelForm.smtp_host} onChange={(e) => setChannelForm((f) => ({ ...f, smtp_host: e.target.value }))} required />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Port</label>
+                        <input className="input w-full text-sm" type="number" value={channelForm.smtp_port} onChange={(e) => setChannelForm((f) => ({ ...f, smtp_port: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Username</label>
+                        <input className="input w-full text-sm" value={channelForm.smtp_user} onChange={(e) => setChannelForm((f) => ({ ...f, smtp_user: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>Password</label>
+                        <input className="input w-full text-sm" type="password" value={channelForm.smtp_pass} onChange={(e) => setChannelForm((f) => ({ ...f, smtp_pass: e.target.value }))} autoComplete="new-password" />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>From address</label>
+                        <input className="input w-full text-sm" type="email" placeholder="alerts@example.com" value={channelForm.smtp_from} onChange={(e) => setChannelForm((f) => ({ ...f, smtp_from: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{ color: 'var(--color-text-muted)' }}>To address</label>
+                        <input className="input w-full text-sm" type="email" placeholder="team@example.com" value={channelForm.smtp_to} onChange={(e) => setChannelForm((f) => ({ ...f, smtp_to: e.target.value }))} required />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={createChannel.isPending} className="btn-primary text-xs py-1.5">
+                      {createChannel.isPending ? 'Saving...' : 'Save Channel'}
+                    </button>
+                    <button type="button" onClick={() => { setShowChannelForm(false); setChannelMsg(null); }} className="btn-secondary text-xs py-1.5">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         )}

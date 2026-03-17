@@ -3,6 +3,7 @@
 const cron = require('node-cron');
 const logger = require('../utils/logger');
 const { syncDurationSeconds } = require('../utils/metrics');
+const db = require('../db');
 const { syncCisaKev } = require('../services/cisa.service');
 const { syncNvd } = require('../services/nvd.service');
 const { syncHibpBreaches } = require('../services/hibp.service');
@@ -48,6 +49,21 @@ function startScheduler() {
 
   // MITRE ATT&CK — weekly on Sunday at midnight
   cron.schedule('0 0 * * 0', () => runSync('mitre', syncMitre));
+
+  // Cleanup — daily at 5am: prune old failed login attempts (>30 days) and delivery log (>90 days)
+  cron.schedule('0 5 * * *', async () => {
+    try {
+      const loginCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const deletedLogins = await db('failed_login_attempts').where('attempted_at', '<', loginCutoff).delete();
+
+      const deliveryCutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+      const deletedDeliveries = await db('webhook_delivery_log').where('attempted_at', '<', deliveryCutoff).delete();
+
+      logger.info(`[Cleanup] Pruned ${deletedLogins} failed login attempts and ${deletedDeliveries} delivery log entries`);
+    } catch (err) {
+      logger.error({ err }, '[Cleanup] Daily pruning failed');
+    }
+  });
 
   logger.info('[Scheduler] All cron jobs registered');
 }
