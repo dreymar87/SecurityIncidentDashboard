@@ -13,6 +13,8 @@ interface ThreatPanelProps {
   sort?: string;
   order?: 'asc' | 'desc';
   onSort?: (field: string) => void;
+  onSelect?: (id: number) => void;
+  selectedId?: number | null;
 }
 
 function SortIcon({ field, sort, order }: { field: string; sort?: string; order?: 'asc' | 'desc' }) {
@@ -35,7 +37,7 @@ function RiskBar({ score }: { score: number }) {
   );
 }
 
-export function ThreatPanel({ data, total, page, pages, onPageChange, loading, sort, order, onSort }: ThreatPanelProps) {
+export function ThreatPanel({ data, total, page, pages, onPageChange, loading, sort, order, onSort, onSelect, selectedId }: ThreatPanelProps) {
   return (
     <div className="card p-0 overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
@@ -75,7 +77,11 @@ export function ThreatPanel({ data, total, page, pages, onPageChange, loading, s
               </tr>
             )}
             {data.map((item) => (
-              <tr key={item.id} className="table-row">
+              <tr
+                key={item.id}
+                className={`table-row cursor-pointer ${selectedId === item.id ? 'bg-sky-500/5' : ''}`}
+                onClick={() => onSelect?.(item.id)}
+              >
                 <td className="table-cell font-mono text-xs text-yellow-400">{item.ip_address}</td>
                 <td className="table-cell">{item.country || '—'}</td>
                 <td className="table-cell text-xs text-gray-400 max-w-xs truncate">{item.org || '—'}</td>

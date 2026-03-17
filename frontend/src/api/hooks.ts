@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, authApi, DashboardStats, TrendData, SearchResults, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert, AlertFilters, PaginatedAlerts, User, UserPreferences, AuditLogEntry, RiskWeights, VulnerabilityNote, NotificationChannel } from './client';
+import { api, authApi, DashboardStats, TrendData, SearchResults, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, ThreatIntelDetail, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert, AlertFilters, PaginatedAlerts, User, UserPreferences, AuditLogEntry, RiskWeights, VulnerabilityNote, NotificationChannel, ApiKey, ApiKeyCreated, ActiveSession } from './client';
 
 export function useStats() {
   return useQuery<DashboardStats>({
@@ -139,7 +139,12 @@ export function useLogin() {
   return useMutation({
     mutationFn: ({ username, password }: { username: string; password: string }) =>
       authApi.post('/auth/login', { username, password }).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['current-user'] }),
+    onSuccess: (data) => {
+      // Only invalidate current-user if fully authenticated (not MFA pending)
+      if (!data.mfa_required) {
+        queryClient.invalidateQueries({ queryKey: ['current-user'] });
+      }
+    },
   });
 }
 
@@ -395,5 +400,110 @@ export function useDeleteNotificationChannel() {
 export function useTestNotificationChannel() {
   return useMutation({
     mutationFn: (id: number) => api.post(`/notification-channels/${id}/test`).then((r) => r.data),
+  });
+}
+
+// ── MFA hooks ─────────────────────────────────────────────────────────────────
+
+export function useMfaEnroll() {
+  return useMutation({
+    mutationFn: () =>
+      authApi.post('/auth/mfa/enroll').then((r) => r.data as { otpauth_url: string; qr_code_data_url: string }),
+  });
+}
+
+export function useMfaVerify() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ token }: { token: string }) =>
+      authApi.post('/auth/mfa/verify', { token }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['current-user'] }),
+  });
+}
+
+export function useMfaChallenge() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ token }: { token: string }) =>
+      authApi.post('/auth/mfa/challenge', { token }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['current-user'] }),
+  });
+}
+
+export function useMfaDisable() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => authApi.post('/auth/mfa/disable').then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['current-user'] }),
+  });
+}
+
+export function useSetMfaRequired() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, mfa_required }: { userId: number; mfa_required: boolean }) =>
+      api.put(`/users/${userId}/mfa-required`, { mfa_required }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+}
+
+// ── API key hooks ─────────────────────────────────────────────────────────────
+
+export function useApiKeys() {
+  return useQuery<ApiKey[]>({
+    queryKey: ['api-keys'],
+    queryFn: () => api.get('/users/me/api-keys').then((r) => r.data),
+  });
+}
+
+export function useCreateApiKey() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name }: { name: string }) =>
+      api.post('/users/me/api-keys', { name }).then((r) => r.data as ApiKeyCreated),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['api-keys'] }),
+  });
+}
+
+export function useRevokeApiKey() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/users/me/api-keys/${id}`).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['api-keys'] }),
+  });
+}
+
+// ── Session management hooks ──────────────────────────────────────────────────
+
+export function useActiveSessions() {
+  return useQuery<ActiveSession[]>({
+    queryKey: ['active-sessions'],
+    queryFn: () => api.get('/users/me/sessions').then((r) => r.data),
+  });
+}
+
+export function useRevokeSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/users/me/sessions/${id}`).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['active-sessions'] }),
+  });
+}
+
+// ── Threat intel detail hook ──────────────────────────────────────────────────
+
+export function useThreatIntelDetail(id: number | null) {
+  return useQuery<ThreatIntelDetail>({
+    queryKey: ['threat-intel-detail', id],
+    queryFn: () => api.get(`/threat-intel/${id}`).then((r) => r.data),
+    enabled: id !== null && !isNaN(id as number),
+  });
+}
+
+export function useEnrichThreatIntel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.post(`/threat-intel/${id}/enrich`).then((r) => r.data),
+    onSuccess: (_data, id) => queryClient.invalidateQueries({ queryKey: ['threat-intel-detail', id] }),
   });
 }

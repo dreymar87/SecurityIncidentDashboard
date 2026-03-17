@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TopBar } from '../components/layout/TopBar';
-import { useUsers, useCreateUser, useDeleteUser, useResetPassword, useCurrentUser } from '../api/hooks';
+import { useUsers, useCreateUser, useDeleteUser, useResetPassword, useCurrentUser, useSetMfaRequired } from '../api/hooks';
 import { User } from '../api/client';
 import { UserPlus, Trash2, KeyRound, Shield, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -17,6 +17,7 @@ export function UserManagement({ onMobileMenuToggle, isMobile }: PageProps) {
   const createUser = useCreateUser();
   const deleteUser = useDeleteUser();
   const resetPassword = useResetPassword();
+  const setMfaRequired = useSetMfaRequired();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'viewer', email: '' });
@@ -185,15 +186,16 @@ export function UserManagement({ onMobileMenuToggle, isMobile }: PageProps) {
               <tr className="border-b" style={{ borderColor: 'var(--color-border)' }}>
                 <th scope="col" className="text-left py-3 px-4 font-medium" style={{ color: 'var(--color-text-muted)' }}>Username</th>
                 <th scope="col" className="text-left py-3 px-4 font-medium" style={{ color: 'var(--color-text-muted)' }}>Role</th>
+                <th scope="col" className="text-left py-3 px-4 font-medium" style={{ color: 'var(--color-text-muted)' }}>MFA</th>
                 <th scope="col" className="text-left py-3 px-4 font-medium" style={{ color: 'var(--color-text-muted)' }}>Created</th>
                 <th scope="col" className="text-right py-3 px-4 font-medium" style={{ color: 'var(--color-text-muted)' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={4} className="py-8 text-center" style={{ color: 'var(--color-text-faint)' }}>Loading...</td></tr>
+                <tr><td colSpan={5} className="py-8 text-center" style={{ color: 'var(--color-text-faint)' }}>Loading...</td></tr>
               ) : !users?.length ? (
-                <tr><td colSpan={4} className="py-8 text-center" style={{ color: 'var(--color-text-faint)' }}>No users found</td></tr>
+                <tr><td colSpan={5} className="py-8 text-center" style={{ color: 'var(--color-text-faint)' }}>No users found</td></tr>
               ) : (
                 users.map((user) => (
                   <tr key={user.id} className="border-b last:border-b-0" style={{ borderColor: 'var(--color-border)' }}>
@@ -211,6 +213,24 @@ export function UserManagement({ onMobileMenuToggle, isMobile }: PageProps) {
                         {user.role === 'admin' ? <Shield size={10} /> : <Eye size={10} />}
                         {user.role}
                       </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setMfaRequired.mutate({ userId: user.id, mfa_required: !user.mfa_required })}
+                          className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                            user.mfa_required
+                              ? 'bg-sky-500/10 text-sky-400 border-sky-500/30 hover:bg-sky-500/20'
+                              : 'bg-gray-700/50 text-gray-400 border-gray-600 hover:bg-gray-700'
+                          }`}
+                          title={user.mfa_required ? 'MFA required — click to disable' : 'MFA not required — click to require'}
+                        >
+                          {user.mfa_required ? 'Required' : 'Off'}
+                        </button>
+                        {user.totp_enabled && (
+                          <span className="text-xs text-green-400" title="User has enrolled TOTP">✓</span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4" style={{ color: 'var(--color-text-faint)' }}>
                       {formatDistanceToNow(new Date(user.created_at), { addSuffix: true })}

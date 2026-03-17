@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useThreatIntel } from '../api/hooks';
+import { useThreatIntel, useThreatIntelDetail } from '../api/hooks';
 import { ThreatPanel } from '../components/threatIntel/ThreatPanel';
+import { ThreatIntelDetail } from '../components/threatIntel/ThreatIntelDetail';
 import { TopBar } from '../components/layout/TopBar';
 import { Search, X } from 'lucide-react';
 
@@ -14,8 +15,10 @@ export function ThreatIntelPage({ onMobileMenuToggle, isMobile }: PageProps) {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState('risk_score');
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const { data, isLoading } = useThreatIntel({ ...filters, page: String(page), sort, order });
+  const { data: detail } = useThreatIntelDetail(selectedId);
 
   function handleSort(field: string) {
     if (field === sort) {
@@ -25,6 +28,10 @@ export function ThreatIntelPage({ onMobileMenuToggle, isMobile }: PageProps) {
       setOrder('desc');
     }
     setPage(1);
+  }
+
+  function handleSelect(id: number) {
+    setSelectedId((prev) => (prev === id ? null : id));
   }
 
   return (
@@ -65,23 +72,34 @@ export function ThreatIntelPage({ onMobileMenuToggle, isMobile }: PageProps) {
           )}
         </div>
 
-        {data ? (
-          <ThreatPanel
-            data={data.data}
-            total={data.total}
-            page={data.page}
-            pages={data.pages}
-            onPageChange={setPage}
-            loading={isLoading}
-            sort={sort}
-            order={order}
-            onSort={handleSort}
-          />
-        ) : (
-          <div className="card flex items-center justify-center h-48 text-gray-500">
-            {isLoading ? 'Loading threat intel…' : 'No data'}
-          </div>
-        )}
+        <div className={selectedId ? 'grid grid-cols-1 lg:grid-cols-2 gap-4' : ''}>
+          {data ? (
+            <ThreatPanel
+              data={data.data}
+              total={data.total}
+              page={data.page}
+              pages={data.pages}
+              onPageChange={setPage}
+              loading={isLoading}
+              sort={sort}
+              order={order}
+              onSort={handleSort}
+              onSelect={handleSelect}
+              selectedId={selectedId}
+            />
+          ) : (
+            <div className="card flex items-center justify-center h-48 text-gray-500">
+              {isLoading ? 'Loading threat intel…' : 'No data'}
+            </div>
+          )}
+
+          {selectedId && detail && (
+            <ThreatIntelDetail
+              data={detail}
+              onClose={() => setSelectedId(null)}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
