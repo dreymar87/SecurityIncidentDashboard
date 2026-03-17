@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useCurrentUser } from './api/hooks';
 import { Sidebar } from './components/layout/Sidebar';
 import { Dashboard } from './pages/Dashboard';
 import { Vulnerabilities } from './pages/Vulnerabilities';
@@ -13,6 +14,14 @@ import { Attack } from './pages/Attack';
 import { UserManagement } from './pages/UserManagement';
 import { Notifications } from './pages/Notifications';
 import { Login } from './pages/Login';
+
+function AdminRoute({ element }: { element: React.ReactElement }) {
+  const { data: currentUser, isLoading } = useCurrentUser();
+  if (isLoading) return null;
+  if (!currentUser) return <Navigate to="/login" replace />;
+  if (currentUser.role !== 'admin') return <Navigate to="/" replace />;
+  return element;
+}
 
 function useViewport() {
   const [width, setWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -48,10 +57,10 @@ export default function App() {
           <Route path="/breaches" element={<Breaches {...pageProps} />} />
           <Route path="/breaches/:id" element={<BreachDetailPage {...pageProps} />} />
           <Route path="/threat-intel" element={<ThreatIntelPage {...pageProps} />} />
-          <Route path="/import" element={<Import {...pageProps} />} />
+          <Route path="/import" element={<AdminRoute element={<Import {...pageProps} />} />} />
           <Route path="/settings" element={<Settings {...pageProps} />} />
           <Route path="/attack" element={<Attack {...pageProps} />} />
-          <Route path="/admin/users" element={<UserManagement {...pageProps} />} />
+          <Route path="/admin/users" element={<AdminRoute element={<UserManagement {...pageProps} />} />} />
           <Route path="/notifications" element={<Notifications {...pageProps} />} />
           <Route path="/login" element={<Login />} />
         </Routes>

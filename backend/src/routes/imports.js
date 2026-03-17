@@ -5,7 +5,7 @@ const path = require('path');
 const db = require('../db');
 const { parseImportFile } = require('../utils/importParser');
 const logger = require('../utils/logger');
-const { requireAuth } = require('../utils/auth');
+const { requireAuth, requireAdmin } = require('../utils/auth');
 const { logAudit } = require('../utils/auditLog');
 
 const upload = multer({
@@ -19,7 +19,7 @@ const upload = multer({
 });
 
 // POST /api/imports/upload
-router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
+router.post('/upload', requireAuth, requireAdmin, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   const { type } = req.body; // vulnerabilities or breaches
