@@ -128,6 +128,27 @@ router.post('/:id/test', async (req, res) => {
   }
 });
 
+// GET /api/notification-channels/:id/log — delivery history for a channel
+router.get('/:id/log', async (req, res) => {
+  try {
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const offset = (page - 1) * limit;
+
+    const [{ count }] = await db('webhook_delivery_log').where('channel_id', req.params.id).count('id as count');
+    const entries = await db('webhook_delivery_log')
+      .where('channel_id', req.params.id)
+      .orderBy('attempted_at', 'desc')
+      .limit(limit)
+      .offset(offset);
+
+    res.json({ data: entries, total: parseInt(count), page, limit });
+  } catch (err) {
+    logger.error({ err }, 'Failed to fetch delivery log');
+    res.status(500).json({ error: 'Failed to fetch delivery log' });
+  }
+});
+
 function maskSecret(s) {
   if (!s || s.length <= 8) return '••••••••';
   return s.slice(0, 8) + '••••••••' + s.slice(-4);

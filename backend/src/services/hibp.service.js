@@ -1,5 +1,6 @@
 const { axiosWithRetry } = require('../utils/httpClient');
 const db = require('../db');
+const { generateAlerts } = require('../utils/alertGenerator');
 const logger = require('../utils/logger');
 const { syncRecordsTotal } = require('../utils/metrics');
 
@@ -14,6 +15,7 @@ async function syncHibpBreaches() {
 
   const startTime = Date.now();
   let recordsSynced = 0;
+  const newBreaches = [];
 
   try {
     const { data: breaches } = await axiosWithRetry({
@@ -22,7 +24,13 @@ async function syncHibpBreaches() {
       timeout: 30000,
     });
 
+    // Fetch existing breach_keys in one query to detect new entries
+    const breachKeys = breaches.map((b) => `hibp:${b.Name}`);
+    const existing = await db('breaches').whereIn('breach_key', breachKeys).select('breach_key');
+    const existingSet = new Set(existing.map((r) => r.breach_key));
+
     for (const b of breaches) {
+      const isNew = !existingSet.has(`hibp:${b.Name}`);
       const record = {
         source: 'hibp',
         breach_key: `hibp:${b.Name}`,
@@ -52,6 +60,15 @@ async function syncHibpBreaches() {
         });
 
       recordsSynced++;
+
+      // Collect new verified breaches with significant record counts for alerting
+      if (isNew && record.is_verified && !record.is_fabricated && record.records_affected >= 100000) {
+        newBreaches.push(record);
+      }
+    }
+
+    if (newBreaches.length > 0) {
+      await generateAlerts('hibp', newBreaches);
     }
 
     await db('sync_log').insert({ source: 'hibp', status: 'success', records_synced: recordsSynced });

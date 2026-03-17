@@ -101,12 +101,33 @@ async function sendSmtp(config, alert) {
 
 async function dispatchToChannel(channel, alert) {
   const config = typeof channel.config === 'string' ? JSON.parse(channel.config) : channel.config;
-  switch (channel.type) {
-    case 'slack': return sendSlack(config, alert);
-    case 'teams': return sendTeams(config, alert);
-    case 'pagerduty': return sendPagerDuty(config, alert);
-    case 'smtp': return sendSmtp(config, alert);
-    default: throw new Error(`Unknown channel type: ${channel.type}`);
+
+  const logEntry = {
+    channel_id: channel.id,
+    channel_name: channel.name,
+    channel_type: channel.type,
+    alert_reference_id: alert.reference_id || null,
+    attempted_at: new Date(),
+  };
+
+  try {
+    switch (channel.type) {
+      case 'slack': await sendSlack(config, alert); break;
+      case 'teams': await sendTeams(config, alert); break;
+      case 'pagerduty': await sendPagerDuty(config, alert); break;
+      case 'smtp': await sendSmtp(config, alert); break;
+      default: throw new Error(`Unknown channel type: ${channel.type}`);
+    }
+    await db('webhook_delivery_log').insert({ ...logEntry, status: 'success' });
+  } catch (err) {
+    const httpStatus = err.response?.status || null;
+    await db('webhook_delivery_log').insert({
+      ...logEntry,
+      status: 'failed',
+      http_status: httpStatus,
+      error_message: err.message?.slice(0, 500) || 'Unknown error',
+    }).catch(() => {}); // never let log write block callers
+    throw err;
   }
 }
 
