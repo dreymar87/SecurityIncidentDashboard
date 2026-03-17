@@ -2,25 +2,54 @@
 
 This document tracks planned features and improvements. Items are grouped by phase and ordered by suggested implementation sequence within each phase.
 
-**Current status**: Phase 5 complete (Multi-User Support).
+**Current status**: Phase 6 complete (Feature Depth).
 
 ---
 
-## Phase 6 — Feature Depth
+## Phase 7 — Notifications & Integrations
 
 | Status | ID | Feature | Description |
 |--------|-----|---------|-------------|
-| ⬜ | P6-1 | **Remediation tracking** | Add `status` (open / in-progress / resolved / accepted-risk) and `assigned_to` fields to vulnerabilities. Filter by status. Lightweight triage workflow without a full ticketing system. |
-| ⬜ | P6-2 | **CVE notes / comments** | `vulnerability_notes` table (vuln_id, user, note, timestamp). Threaded team notes on each CVE detail page. |
-| ⬜ | P6-3 | **Watchlists** | Star/watch specific CVEs or save a filter preset as a watchlist. Bell alerts optionally scoped to watched items. |
-| ⬜ | P6-4 | **PDF / print report** | "Export Report" button on Dashboard generates a print-friendly summary of key metrics, top CVEs, and recent breaches. CSS `@media print` approach. |
-| ⬜ | P6-5 | **Risk scoring** | Custom risk score per CVE = weighted blend of CVSS base score + exploit availability + breach correlation. Configurable weights in Settings. "Risk Score" sortable column added to `VulnTable`. |
+| ⬜ | P7-1 | **Webhook / notification alerts** | Push alerts to Slack, Teams, PagerDuty, or SMTP email when new critical CVEs or breaches are detected. Configurable per-channel in Settings. |
+| ⬜ | P7-2 | **Notification center** | Full alert history page replacing the bell-icon-only view. Filterable by severity, source, date. |
+| ⬜ | P7-3 | **Failed login alerting** | Auto-create an alert after N failed login attempts from a username or IP. |
+
+---
+
+## Phase 8 — Security Hardening
+
+| Status | ID | Feature | Description |
+|--------|-----|---------|-------------|
+| ⬜ | P8-1 | **MFA / TOTP** | Time-based one-time password enrollment via QR code. Required on next login after admin enables it per user. |
+| ⬜ | P8-2 | **API key auth** | `api_keys` table, `X-API-Key` header-based auth for programmatic/CI access without session cookies. |
+| ⬜ | P8-3 | **Session management UI** | List active sessions, show last activity, allow individual session revocation. |
+| ⬜ | P8-4 | **Shodan / Censys integration** | IP enrichment for threat intel entries. Already referenced in README. |
+
+---
+
+## Phase 9 — Intelligence & Enrichment
+
+| Status | ID | Feature | Description |
+|--------|-----|---------|-------------|
+| ⬜ | P9-1 | **AI CVE summaries** | Claude API integration on CVE detail page — plain-language summary and remediation advice. |
+| ⬜ | P9-2 | **CVE-to-breach correlation** | Auto-link vulnerabilities to breaches sharing country or affected product data. |
+| ⬜ | P9-3 | **CVE diff / changelog** | Store NVD update history; show what changed between sync runs on the detail page. |
+
+---
+
+## Completed
 
 ---
 
 ## Completed
 
 | Phase | ID | Feature |
+| 6 | P6-1 | Triage states — `triage_status` (new/watching/reviewed/dismissed) on vulnerabilities with filter, badge, and detail-page selector |
+| 6 | P6-2 | CVE notes — `vulnerability_notes` table, threaded team notes on CVE detail page with add/delete |
+| 6 | P6-3 | Watchlist — star/watch individual CVEs, "watched only" filter in VulnTable |
+| 6 | P6-4 | PDF / print report — "Export Report" button on Dashboard, CSS `@media print` with PrintHeader component |
+| 6 | P6-5 | Risk scoring — configurable weighted score (CVSS + exploit + KEV), stored in `app_settings`, sortable column, Settings UI |
+|-------|----|---------|
 | 5 | P5-1 | Multiple user accounts — CLI `create-user.js` script, `requireAdmin` middleware, admin + viewer roles |
 | 5 | P5-2 | User management page — `/admin/users` with add/remove users, reset passwords, role badges |
 | 5 | P5-3 | Per-user alert preferences — severity threshold (CRITICAL/HIGH/MEDIUM/LOW/ALL) in user preferences |

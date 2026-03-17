@@ -37,6 +37,23 @@ export interface Vulnerability {
   countries: string[];
   published_at: string | null;
   last_modified: string | null;
+  risk_score: number | null;
+  triage_status: 'new' | 'watching' | 'reviewed' | 'dismissed';
+}
+
+export interface RiskWeights {
+  cvss: number;
+  exploit: number;
+  kev: number;
+}
+
+export interface VulnerabilityNote {
+  id: number;
+  cve_id: string;
+  user_id: number;
+  username: string;
+  note: string;
+  created_at: string;
 }
 
 export interface Breach {
@@ -106,6 +123,8 @@ export interface VulnFilters {
   dateTo?: string;
   kev?: boolean;
   exploit?: boolean;
+  triage?: string;
+  watched?: boolean;
   q?: string;
   page?: number;
   limit?: number;

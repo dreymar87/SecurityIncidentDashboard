@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, authApi, DashboardStats, TrendData, SearchResults, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert, User, UserPreferences, AuditLogEntry } from './client';
+import { api, authApi, DashboardStats, TrendData, SearchResults, ImportJob, PaginatedResponse, Vulnerability, Breach, ThreatIntel, VulnFilters, BreachFilters, SettingsStatus, AttackTechnique, Alert, User, UserPreferences, AuditLogEntry, RiskWeights, VulnerabilityNote } from './client';
 
 export function useStats() {
   return useQuery<DashboardStats>({
@@ -215,6 +215,91 @@ export function useUpdatePreferences() {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
       queryClient.invalidateQueries({ queryKey: ['alerts-unread'] });
     },
+  });
+}
+
+export function useRiskWeights() {
+  return useQuery<RiskWeights>({
+    queryKey: ['risk-weights'],
+    queryFn: () => api.get('/settings/risk-weights').then((r) => r.data),
+  });
+}
+
+export function useUpdateRiskWeights() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (weights: RiskWeights) =>
+      api.put('/settings/risk-weights', weights).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['risk-weights'] }),
+  });
+}
+
+export function useUpdateTriage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cveId, status }: { cveId: string; status: string }) =>
+      api.patch(`/vulnerabilities/${cveId}/triage`, { status }).then((r) => r.data),
+    onSuccess: (_data, { cveId }) => {
+      queryClient.invalidateQueries({ queryKey: ['vulnerability', cveId] });
+      queryClient.invalidateQueries({ queryKey: ['vulnerabilities'] });
+    },
+  });
+}
+
+export function useVulnerabilityNotes(cveId: string) {
+  return useQuery<VulnerabilityNote[]>({
+    queryKey: ['vulnerability-notes', cveId],
+    queryFn: () => api.get(`/vulnerabilities/${cveId}/notes`).then((r) => r.data),
+    enabled: !!cveId,
+    refetchInterval: 30 * 1000,
+  });
+}
+
+export function useAddNote(cveId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (note: string) =>
+      api.post(`/vulnerabilities/${cveId}/notes`, { note }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vulnerability-notes', cveId] }),
+  });
+}
+
+export function useDeleteNote(cveId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (noteId: number) =>
+      api.delete(`/vulnerabilities/${cveId}/notes/${noteId}`).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vulnerability-notes', cveId] }),
+  });
+}
+
+export function useWatchlist() {
+  return useQuery<string[]>({
+    queryKey: ['watchlist'],
+    queryFn: () => api.get('/watchlist').then((r) => r.data),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useToggleWatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cveId, watched }: { cveId: string; watched: boolean }) =>
+      watched
+        ? api.delete(`/watchlist/${cveId}`).then((r) => r.data)
+        : api.post(`/watchlist/${cveId}`).then((r) => r.data),
+    onMutate: async ({ cveId, watched }) => {
+      await queryClient.cancelQueries({ queryKey: ['watchlist'] });
+      const prev = queryClient.getQueryData<string[]>(['watchlist']);
+      queryClient.setQueryData<string[]>(['watchlist'], (old = []) =>
+        watched ? old.filter((id) => id !== cveId) : [...old, cveId]
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(['watchlist'], context.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['watchlist'] }),
   });
 }
 

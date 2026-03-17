@@ -157,3 +157,59 @@
     @apply px-4 py-3 text-sm;
   }
 }
+
+/* ── Print styles ─────────────────────────────────────────────────────────── */
+@media print {
+  /* Hide interactive and navigation elements */
+  #sidebar,
+  #topbar,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Show print-only header */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Reset layout for print */
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    font-size: 11pt;
+  }
+
+  .card {
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+    border-radius: 6px;
+    break-inside: avoid;
+  }
+
+  /* Ensure main content fills page width */
+  main,
+  [role="main"],
+  .p-6 {
+    margin: 0 !important;
+    padding: 12pt !important;
+  }
+
+  /* Page breaks before major sections */
+  .print-break-before {
+    break-before: page;
+  }
+
+  /* Force text colors for readability */
+  h1, h2, h3, p, span, td, th {
+    color: #111 !important;
+  }
+
+  .text-sky-400, .text-gray-400, .text-gray-500 {
+    color: #333 !important;
+  }
+
+  /* Hide chart tooltips and interactive overlays */
+  .recharts-tooltip-wrapper {
+    display: none !important;
+  }
+}

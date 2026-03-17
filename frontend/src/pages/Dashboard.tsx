@@ -4,10 +4,11 @@ import { SeverityChart } from '../components/dashboard/SeverityChart';
 import { WorldMap } from '../components/dashboard/WorldMap';
 import { ActivityFeed } from '../components/dashboard/ActivityFeed';
 import { TrendChart } from '../components/dashboard/TrendChart';
+import { PrintHeader } from '../components/dashboard/PrintHeader';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { SkeletonMetric, SkeletonCard, SkeletonTable } from '../components/SkeletonLoader';
 import { TopBar } from '../components/layout/TopBar';
-import { RefreshCw, Zap } from 'lucide-react';
+import { RefreshCw, Zap, Printer } from 'lucide-react';
 import { api } from '../api/client';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -64,6 +65,20 @@ export function Dashboard({ onMobileMenuToggle, isMobile }: PageProps) {
     <div>
       <TopBar title="Dashboard" onMobileMenuToggle={onMobileMenuToggle} isMobile={isMobile} />
       <div className="p-6 space-y-6">
+        {/* Print-only header */}
+        <PrintHeader />
+
+        {/* Export Report button */}
+        <div className="flex justify-end no-print">
+          <button
+            onClick={() => window.print()}
+            className="btn-secondary text-xs py-1.5 flex items-center gap-1.5"
+            aria-label="Export dashboard as PDF"
+          >
+            <Printer size={13} /> Export Report
+          </button>
+        </div>
+
         <ErrorBoundary label="Metrics">
           <MetricsPanel stats={stats} />
         </ErrorBoundary>

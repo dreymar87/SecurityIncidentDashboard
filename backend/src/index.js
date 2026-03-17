@@ -46,7 +46,10 @@ const alertsRouter = require('./routes/alerts');
 const searchRouter = require('./routes/search');
 const usersRouter = require('./routes/users');
 const auditLogRouter = require('./routes/auditLog');
+const vulnerabilityNotesRouter = require('./routes/vulnerabilityNotes');
+const watchlistRouter = require('./routes/watchlist');
 const { startScheduler } = require('./jobs/scheduler');
+const { recalculateAllRiskScores } = require('./utils/riskScore');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -125,6 +128,8 @@ app.use('/auth/login', loginLimiter);
 app.use('/auth', require('./routes/auth'));
 
 app.use('/api/vulnerabilities', vulnerabilitiesRouter);
+app.use('/api/vulnerabilities', vulnerabilityNotesRouter);
+app.use('/api/watchlist', watchlistRouter);
 app.use('/api/breaches', breachesRouter);
 app.use('/api/threat-intel', threatIntelRouter);
 app.use('/api/stats', statsRouter);
@@ -149,6 +154,10 @@ app.listen(PORT, () => {
   if (process.env.ENABLE_SCHEDULER !== 'false') {
     startScheduler();
   }
+  // Recalculate risk scores on startup to populate any null values
+  recalculateAllRiskScores().catch((err) =>
+    logger.error({ err }, 'Startup risk score recalculation failed')
+  );
 });
 
 module.exports = app;

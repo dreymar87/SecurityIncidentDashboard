@@ -83,7 +83,7 @@ export function TopBar({ title, onMobileMenuToggle, isMobile }: TopBarProps) {
   }
 
   return (
-    <header className="h-14 border-b border-gray-800 flex items-center justify-between px-4 sm:px-6 bg-gray-950/80 backdrop-blur sticky top-0 z-20" style={{ backgroundColor: 'var(--color-bg-primary)', borderColor: 'var(--color-border)' }}>
+    <header id="topbar" className="h-14 border-b border-gray-800 flex items-center justify-between px-4 sm:px-6 bg-gray-950/80 backdrop-blur sticky top-0 z-20" style={{ backgroundColor: 'var(--color-bg-primary)', borderColor: 'var(--color-border)' }}>
       <div className="flex items-center gap-3">
         {isMobile && (
           <button onClick={onMobileMenuToggle} className="p-1.5 rounded-lg transition-colors hover:bg-gray-800" aria-label="Open navigation menu">

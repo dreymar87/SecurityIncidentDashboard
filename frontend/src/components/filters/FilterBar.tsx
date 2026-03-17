@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Search, X, Save, ChevronDown, Trash2 } from 'lucide-react';
 
 const SEVERITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'NONE'];
+const TRIAGE_STATUSES = ['new', 'watching', 'reviewed', 'dismissed'];
 const SOURCES_VULN = ['nvd', 'cisa', 'osv', 'ghsa', 'imported'];
 const SOURCES_BREACH = ['hibp', 'imported'];
 
@@ -155,9 +156,28 @@ export function FilterBar({ mode, filters, onChange, onClear }: FilterBarProps) 
         onChange={(e) => onChange('dateTo', e.target.value || undefined)}
       />
 
-      {/* Toggles for vulnerabilities */}
+      {/* Toggles and extra filters for vulnerabilities */}
       {mode === 'vulnerabilities' && (
         <>
+          <select
+            className="input"
+            value={(filters.triage as string) || ''}
+            onChange={(e) => onChange('triage', e.target.value || undefined)}
+          >
+            <option value="">All Triage</option>
+            {TRIAGE_STATUSES.map((s) => (
+              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+            ))}
+          </select>
+          <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              className="accent-yellow-500"
+              checked={!!(filters.watched)}
+              onChange={(e) => onChange('watched', e.target.checked || undefined)}
+            />
+            ★ Watched only
+          </label>
           <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none">
             <input
               type="checkbox"
