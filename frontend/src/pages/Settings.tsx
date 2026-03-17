@@ -532,7 +532,7 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
 
               {mfaStep === 'idle' && (
                 <>
-                  {(currentUser as { totp_enabled?: boolean }).totp_enabled ? (
+                  {currentUser?.totp_enabled ? (
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
