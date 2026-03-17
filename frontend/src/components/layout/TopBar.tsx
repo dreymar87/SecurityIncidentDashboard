@@ -86,8 +86,8 @@ export function TopBar({ title, onMobileMenuToggle, isMobile }: TopBarProps) {
     <header id="topbar" className="h-14 border-b border-gray-800 flex items-center justify-between px-4 sm:px-6 bg-gray-950/80 backdrop-blur sticky top-0 z-20" style={{ backgroundColor: 'var(--color-bg-primary)', borderColor: 'var(--color-border)' }}>
       <div className="flex items-center gap-3">
         {isMobile && (
-          <button onClick={onMobileMenuToggle} className="p-1.5 rounded-lg transition-colors hover:bg-gray-800" aria-label="Open navigation menu">
-            <Menu size={18} className="text-gray-400" />
+          <button onClick={onMobileMenuToggle} className="icon-btn" aria-label="Open navigation menu">
+            <Menu size={18} />
           </button>
         )}
         <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</h2>
@@ -201,11 +201,11 @@ export function TopBar({ title, onMobileMenuToggle, isMobile }: TopBarProps) {
         <AlertBell />
         <button
           onClick={toggleTheme}
-          className="p-1.5 rounded-lg transition-colors hover:bg-gray-800"
+          className="icon-btn"
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          {theme === 'dark' ? <Sun size={15} className="text-gray-400" /> : <Moon size={15} className="text-gray-500" />}
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </button>
         <button
           onClick={triggerSync}

@@ -156,6 +156,29 @@
     color: var(--color-text-secondary);
     @apply px-4 py-3 text-sm;
   }
+
+  /* Theme-aware icon button — adapts hover color to light/dark mode */
+  .icon-btn {
+    color: var(--color-text-muted);
+    @apply p-1.5 rounded-lg transition-colors;
+  }
+  .icon-btn:hover {
+    background-color: var(--color-bg-tertiary);
+  }
+}
+
+/* ── react-grid-layout resize handle theming ─────────────────────────────── */
+.react-resizable-handle {
+  opacity: 0.3;
+  transition: opacity 0.15s;
+}
+.react-resizable-handle:hover,
+.react-grid-item:hover .react-resizable-handle {
+  opacity: 0.8;
+}
+/* Hide drag/resize chrome during print */
+@media print {
+  .react-resizable-handle { display: none !important; }
 }
 
 /* ── Print styles ─────────────────────────────────────────────────────────── */

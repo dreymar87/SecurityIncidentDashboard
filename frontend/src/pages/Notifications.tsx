@@ -1,9 +1,24 @@
 import { useState } from 'react';
 import { Bell, CheckCheck, Filter } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { useAlertsFeed, useMarkAlertRead, useMarkAllAlertsRead } from '../api/hooks';
 import { TopBar } from '../components/layout/TopBar';
 import { SkeletonTable } from '../components/SkeletonLoader';
+import type { Alert } from '../api/client';
+
+function getAlertPath(alert: Alert): string | null {
+  const type = (alert.type ?? '').toLowerCase();
+  if (alert.reference_id) {
+    if (type.includes('cve') || type.includes('vuln')) {
+      return `/vulnerabilities/${alert.reference_id}`;
+    }
+    if (type.includes('breach')) {
+      return `/breaches/${alert.reference_id}`;
+    }
+  }
+  return null;
+}
 
 interface PageProps {
   onMobileMenuToggle?: () => void;
@@ -28,6 +43,7 @@ const SEVERITY_DOT: Record<string, string> = {
 };
 
 export function Notifications({ onMobileMenuToggle, isMobile }: PageProps) {
+  const navigate = useNavigate();
   const [severity, setSeverity] = useState('');
   const [source, setSource] = useState('');
   const [readFilter, setReadFilter] = useState('');
@@ -181,7 +197,11 @@ export function Notifications({ onMobileMenuToggle, isMobile }: PageProps) {
               {alerts.map((alert) => (
                 <button
                   key={alert.id}
-                  onClick={() => { if (!alert.read) markRead.mutate(alert.id); }}
+                  onClick={() => {
+                    if (!alert.read) markRead.mutate(alert.id);
+                    const path = getAlertPath(alert);
+                    if (path) navigate(path);
+                  }}
                   className="w-full text-left px-4 py-3 transition-colors hover:opacity-80 flex items-start gap-3"
                   style={{
                     backgroundColor: alert.read ? 'transparent' : 'rgba(14, 165, 233, 0.04)',

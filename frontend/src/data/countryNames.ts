@@ -180,3 +180,38 @@ export const COUNTRY_NAME_MAP: Record<string, string> = {
   'Zambia': 'ZMB',
   'Zimbabwe': 'ZWE',
 };
+
+/**
+ * Maps ISO 3166-1 alpha-2 country codes (as returned by the API) to
+ * alpha-3 codes used by COUNTRY_NAME_MAP lookups.
+ */
+export const ISO2_TO_ISO3: Record<string, string> = {
+  AF:'AFG', AL:'ALB', DZ:'DZA', AO:'AGO', AR:'ARG', AM:'ARM',
+  AU:'AUS', AT:'AUT', AZ:'AZE', BS:'BHS', BD:'BGD', BY:'BLR',
+  BE:'BEL', BZ:'BLZ', BJ:'BEN', BT:'BTN', BO:'BOL', BA:'BIH',
+  BW:'BWA', BR:'BRA', BN:'BRN', BG:'BGR', BF:'BFA', BI:'BDI',
+  KH:'KHM', CM:'CMR', CA:'CAN', CF:'CAF', TD:'TCD', CL:'CHL',
+  CN:'CHN', CO:'COL', CG:'COG', CR:'CRI', HR:'HRV', CU:'CUB',
+  CY:'CYP', CZ:'CZE', CI:'CIV', CD:'COD', DK:'DNK', DJ:'DJI',
+  DO:'DOM', EC:'ECU', EG:'EGY', SV:'SLV', GQ:'GNQ', ER:'ERI',
+  EE:'EST', ET:'ETH', FJ:'FJI', FI:'FIN', FR:'FRA', GA:'GAB',
+  GM:'GMB', GE:'GEO', DE:'DEU', GH:'GHA', GR:'GRC', GL:'GRL',
+  GT:'GTM', GN:'GIN', GW:'GNB', GY:'GUY', HT:'HTI', HN:'HND',
+  HU:'HUN', IS:'ISL', IN:'IND', ID:'IDN', IR:'IRN', IQ:'IRQ',
+  IE:'IRL', IL:'ISR', IT:'ITA', JM:'JAM', JP:'JPN', JO:'JOR',
+  KZ:'KAZ', KE:'KEN', KW:'KWT', KG:'KGZ', LA:'LAO', LV:'LVA',
+  LB:'LBN', LS:'LSO', LR:'LBR', LY:'LBY', LT:'LTU', LU:'LUX',
+  MK:'MKD', MG:'MDG', MW:'MWI', MY:'MYS', ML:'MLI', MR:'MRT',
+  MX:'MEX', MD:'MDA', MN:'MNG', ME:'MNE', MA:'MAR', MZ:'MOZ',
+  MM:'MMR', NA:'NAM', NP:'NPL', NL:'NLD', NZ:'NZL', NI:'NIC',
+  NE:'NER', NG:'NGA', KP:'PRK', NO:'NOR', OM:'OMN', PK:'PAK',
+  PA:'PAN', PG:'PNG', PY:'PRY', PE:'PER', PH:'PHL', PL:'POL',
+  PT:'PRT', QA:'QAT', RO:'ROU', RU:'RUS', RW:'RWA', SA:'SAU',
+  SN:'SEN', RS:'SRB', SL:'SLE', SK:'SVK', SI:'SVN', SB:'SLB',
+  SO:'SOM', ZA:'ZAF', KR:'KOR', SS:'SSD', ES:'ESP', LK:'LKA',
+  SD:'SDN', SR:'SUR', SE:'SWE', CH:'CHE', SY:'SYR', TW:'TWN',
+  TJ:'TJK', TZ:'TZA', TH:'THA', TL:'TLS', TG:'TGO', TT:'TTO',
+  TN:'TUN', TR:'TUR', TM:'TKM', UG:'UGA', UA:'UKR', AE:'ARE',
+  GB:'GBR', US:'USA', UY:'URY', UZ:'UZB', VE:'VEN', VN:'VNM',
+  EH:'ESH', YE:'YEM', ZM:'ZMB', ZW:'ZWE',
+};
