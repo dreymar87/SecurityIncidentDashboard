@@ -20,7 +20,7 @@ fs.mkdirSync('/tmp/sid-imports', { recursive: true });
 
 // Validate required environment variables
 const REQUIRED_ENV = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
-const OPTIONAL_ENV = ['NVD_API_KEY', 'HIBP_API_KEY', 'GREYNOISE_API_KEY', 'GITHUB_TOKEN'];
+const OPTIONAL_ENV = ['NVD_API_KEY', 'HIBP_API_KEY', 'GREYNOISE_API_KEY', 'GITHUB_TOKEN', 'SHODAN_API_KEY', 'CENSYS_API_ID', 'CENSYS_API_SECRET'];
 
 for (const key of REQUIRED_ENV) {
   if (!process.env[key]) {
@@ -51,6 +51,8 @@ const watchlistRouter = require('./routes/watchlist');
 const notificationChannelsRouter = require('./routes/notificationChannels');
 const { startScheduler } = require('./jobs/scheduler');
 const { recalculateAllRiskScores } = require('./utils/riskScore');
+const { apiKeyMiddleware } = require('./utils/auth');
+const sessionTracker = require('./middleware/sessionTracker');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -119,7 +121,10 @@ if (process.env.ENABLE_AUTH === 'true') {
   }));
   app.use(passport.initialize());
   app.use(passport.session());
+  app.use(sessionTracker);
 }
+
+app.use('/api', apiKeyMiddleware);
 
 app.use('/api', generalLimiter);
 app.use('/api/sync/trigger', syncLimiter);

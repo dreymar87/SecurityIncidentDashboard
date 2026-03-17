@@ -2,7 +2,7 @@
 
 This document tracks planned features and improvements. Items are grouped by phase and ordered by suggested implementation sequence within each phase.
 
-**Current status**: Phase 6 complete (Feature Depth).
+**Current status**: Phase 8 complete (Security Hardening).
 
 ---
 
@@ -20,10 +20,10 @@ This document tracks planned features and improvements. Items are grouped by pha
 
 | Status | ID | Feature | Description |
 |--------|-----|---------|-------------|
-| ⬜ | P8-1 | **MFA / TOTP** | Time-based one-time password enrollment via QR code. Required on next login after admin enables it per user. |
-| ⬜ | P8-2 | **API key auth** | `api_keys` table, `X-API-Key` header-based auth for programmatic/CI access without session cookies. |
-| ⬜ | P8-3 | **Session management UI** | List active sessions, show last activity, allow individual session revocation. |
-| ⬜ | P8-4 | **Shodan / Censys integration** | IP enrichment for threat intel entries. Already referenced in README. |
+| ✅ | P8-1 | **MFA / TOTP** | Time-based one-time password enrollment via QR code. Required on next login after admin enables it per user. |
+| ✅ | P8-2 | **API key auth** | `api_keys` table, `X-API-Key` header-based auth for programmatic/CI access without session cookies. |
+| ✅ | P8-3 | **Session management UI** | List active sessions, show last activity, allow individual session revocation. |
+| ✅ | P8-4 | **Shodan / Censys integration** | IP enrichment for threat intel entries. Click row to see detail panel with Shodan/Censys data. |
 
 ---
 

@@ -198,6 +198,58 @@ export interface User {
   role: 'admin' | 'viewer';
   active: boolean;
   created_at: string;
+  totp_enabled: boolean;
+  mfa_required: boolean;
+}
+
+export interface ApiKey {
+  id: number;
+  name: string;
+  last_used_at: string | null;
+  created_at: string;
+  active: boolean;
+}
+
+export interface ApiKeyCreated extends ApiKey {
+  key: string; // raw key shown only at creation
+}
+
+export interface ActiveSession {
+  id: number;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+  last_activity: string;
+  is_current: boolean;
+}
+
+export interface ShodanData {
+  ports: number[];
+  vulns: string[];
+  org: string | null;
+  isp: string | null;
+  country: string | null;
+  asn: string | null;
+  hostnames: string[];
+  last_update: string | null;
+}
+
+export interface CensysData {
+  ports: number[];
+  autonomous_system: {
+    asn: number;
+    name: string;
+    bgp_prefix: string;
+    country_code: string;
+  } | null;
+  labels: string[];
+  last_updated_at: string | null;
+}
+
+export interface ThreatIntelDetail extends ThreatIntel {
+  shodan_data: ShodanData | null;
+  censys_data: CensysData | null;
+  raw_data?: string | null;
 }
 
 export interface UserPreferences {

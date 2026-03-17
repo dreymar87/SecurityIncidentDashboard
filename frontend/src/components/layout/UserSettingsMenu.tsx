@@ -137,18 +137,12 @@ export function UserSettingsMenu({ collapsed }: UserSettingsMenuProps) {
             Change Password
           </button>
           <button
-            disabled
-            className="w-full flex items-center gap-3 px-4 py-2 text-xs text-left opacity-50 cursor-not-allowed"
-            style={{ color: 'var(--color-text-muted)' }}
+            onClick={() => handleNavLink('/settings#two-factor')}
+            className="w-full flex items-center gap-3 px-4 py-2 text-xs text-left transition-colors hover:bg-gray-800/60"
+            style={{ color: 'var(--color-text-secondary)' }}
           >
             <Shield size={13} />
             <span>Two-Factor Auth</span>
-            <span
-              className="ml-auto text-[9px] px-1.5 py-0.5 rounded-full"
-              style={{ backgroundColor: 'rgba(107,114,128,0.25)', color: 'var(--color-text-faint)' }}
-            >
-              Soon
-            </span>
           </button>
 
           <div className="border-t my-1" style={{ borderColor: 'var(--color-border)' }} />

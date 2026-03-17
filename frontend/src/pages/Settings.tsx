@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { TopBar } from '../components/layout/TopBar';
-import { useSettings, useCurrentUser, useUserPreferences, useUpdatePreferences, useAuditLog, useChangePassword, useUpdateProfile, useRiskWeights, useUpdateRiskWeights, useNotificationChannels, useCreateNotificationChannel, useUpdateNotificationChannel, useDeleteNotificationChannel, useTestNotificationChannel } from '../api/hooks';
-import { NotificationChannel } from '../api/client';
+import { useSettings, useCurrentUser, useUserPreferences, useUpdatePreferences, useAuditLog, useChangePassword, useUpdateProfile, useRiskWeights, useUpdateRiskWeights, useNotificationChannels, useCreateNotificationChannel, useUpdateNotificationChannel, useDeleteNotificationChannel, useTestNotificationChannel, useMfaEnroll, useMfaVerify, useMfaDisable, useApiKeys, useCreateApiKey, useRevokeApiKey, useActiveSessions, useRevokeSession } from '../api/hooks';
+import { NotificationChannel, ApiKeyCreated } from '../api/client';
 import { api } from '../api/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { RefreshCw, CheckCircle, XCircle, Clock, Key, Bell, ChevronLeft, ChevronRight, User, Lock, BarChart2, Plus, Trash2, Send, Webhook } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, Clock, Key, Bell, ChevronLeft, ChevronRight, User, Lock, BarChart2, Plus, Trash2, Send, Webhook, Shield, QrCode, Monitor, Copy, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -68,6 +68,28 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
   const updateRiskWeights = useUpdateRiskWeights();
   const [riskForm, setRiskForm] = useState<{ cvss: string; exploit: string; kev: string } | null>(null);
   const [riskMsg, setRiskMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // MFA state
+  const mfaEnroll = useMfaEnroll();
+  const mfaVerify = useMfaVerify();
+  const mfaDisable = useMfaDisable();
+  const [mfaStep, setMfaStep] = useState<'idle' | 'enrolling' | 'verifying'>('idle');
+  const [mfaEnrollData, setMfaEnrollData] = useState<{ qr_code_data_url: string; otpauth_url: string } | null>(null);
+  const [mfaToken, setMfaToken] = useState('');
+  const [mfaMsg, setMfaMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // API keys state
+  const { data: apiKeys } = useApiKeys();
+  const createApiKey = useCreateApiKey();
+  const revokeApiKey = useRevokeApiKey();
+  const [newKeyName, setNewKeyName] = useState('');
+  const [showKeyForm, setShowKeyForm] = useState(false);
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<ApiKeyCreated | null>(null);
+  const [keyMsg, setKeyMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Sessions state
+  const { data: activeSessions } = useActiveSessions();
+  const revokeSession = useRevokeSession();
 
   // Notification channels
   const { data: channels } = useNotificationChannels();
@@ -208,6 +230,78 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to save risk weights';
       setRiskMsg({ type: 'error', text: msg });
     }
+  }
+
+  async function handleMfaStartEnroll() {
+    setMfaMsg(null);
+    try {
+      const enrollment = await mfaEnroll.mutateAsync();
+      setMfaEnrollData(enrollment);
+      setMfaStep('enrolling');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to start enrollment';
+      setMfaMsg({ type: 'error', text: msg });
+    }
+  }
+
+  async function handleMfaVerify(e: React.FormEvent) {
+    e.preventDefault();
+    setMfaMsg(null);
+    try {
+      await mfaVerify.mutateAsync({ token: mfaToken });
+      setMfaMsg({ type: 'success', text: 'Two-factor authentication enabled successfully.' });
+      setMfaStep('idle');
+      setMfaToken('');
+      setMfaEnrollData(null);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Invalid code';
+      setMfaMsg({ type: 'error', text: msg });
+      setMfaToken('');
+    }
+  }
+
+  async function handleMfaDisable() {
+    if (!confirm('Disable two-factor authentication? You can re-enroll at any time.')) return;
+    setMfaMsg(null);
+    try {
+      await mfaDisable.mutateAsync();
+      setMfaMsg({ type: 'success', text: 'Two-factor authentication disabled.' });
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to disable MFA';
+      setMfaMsg({ type: 'error', text: msg });
+    }
+  }
+
+  async function handleCreateApiKey(e: React.FormEvent) {
+    e.preventDefault();
+    setKeyMsg(null);
+    try {
+      const created = await createApiKey.mutateAsync({ name: newKeyName });
+      setNewlyCreatedKey(created);
+      setNewKeyName('');
+      setShowKeyForm(false);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to create API key';
+      setKeyMsg({ type: 'error', text: msg });
+    }
+  }
+
+  function parseUserAgent(ua: string | null): string {
+    if (!ua) return 'Unknown browser';
+    if (ua.includes('curl')) return 'API / curl';
+    if (ua.includes('python')) return 'Python script';
+    const browser = ua.includes('Edg') ? 'Edge'
+      : ua.includes('Chrome') ? 'Chrome'
+      : ua.includes('Firefox') ? 'Firefox'
+      : ua.includes('Safari') ? 'Safari'
+      : 'Browser';
+    const os = ua.includes('Windows') ? 'Windows'
+      : ua.includes('Mac') ? 'macOS'
+      : ua.includes('Linux') ? 'Linux'
+      : ua.includes('Android') ? 'Android'
+      : ua.includes('iPhone') || ua.includes('iPad') ? 'iOS'
+      : null;
+    return os ? `${browser} on ${os}` : browser;
   }
 
   return (
@@ -418,6 +512,247 @@ export function Settings({ onMobileMenuToggle, isMobile }: PageProps) {
                   {changePassword.isPending ? 'Changing...' : 'Change Password'}
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Two-Factor Authentication */}
+        {currentUser && (
+          <div id="two-factor">
+            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+              <Shield size={14} />
+              Two-Factor Authentication
+            </h3>
+            <div className="card p-4 space-y-3">
+              {mfaMsg && (
+                <div className={`text-xs px-3 py-2 rounded-lg border ${mfaMsg.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                  {mfaMsg.text}
+                </div>
+              )}
+
+              {mfaStep === 'idle' && (
+                <>
+                  {(currentUser as { totp_enabled?: boolean }).totp_enabled ? (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                          Two-factor authentication is <span className="text-green-400">active</span>
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-faint)' }}>
+                          Your account is protected with an authenticator app.
+                        </p>
+                      </div>
+                      <button onClick={handleMfaDisable} disabled={mfaDisable.isPending} className="btn-secondary text-xs py-1.5 text-red-400 hover:text-red-300">
+                        {mfaDisable.isPending ? 'Disabling…' : 'Disable'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                          Two-factor authentication is <span style={{ color: 'var(--color-text-faint)' }}>not enabled</span>
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-faint)' }}>
+                          Add an extra layer of security with an authenticator app.
+                        </p>
+                      </div>
+                      <button onClick={handleMfaStartEnroll} disabled={mfaEnroll.isPending} className="btn-primary text-xs py-1.5">
+                        {mfaEnroll.isPending ? 'Starting…' : 'Enable 2FA'}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {mfaStep === 'enrolling' && mfaEnrollData && (
+                <div className="space-y-3">
+                  <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                    Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code to confirm.
+                  </p>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="bg-white p-2 rounded-lg">
+                      <img src={mfaEnrollData.qr_code_data_url} alt="TOTP QR Code" className="w-36 h-36" />
+                    </div>
+                    <details className="w-full text-xs">
+                      <summary className="cursor-pointer" style={{ color: 'var(--color-text-faint)' }}>
+                        <QrCode size={12} className="inline mr-1" />
+                        Can't scan? Show setup key
+                      </summary>
+                      <code className="block mt-1 p-2 rounded text-xs break-all" style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-secondary)' }}>
+                        {mfaEnrollData.otpauth_url}
+                      </code>
+                    </details>
+                  </div>
+                  <form onSubmit={handleMfaVerify} className="flex gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={mfaToken}
+                      onChange={(e) => setMfaToken(e.target.value.replace(/\D/g, ''))}
+                      placeholder="000000"
+                      className="input flex-1 text-center font-mono tracking-widest text-sm"
+                      autoFocus
+                    />
+                    <button type="submit" disabled={mfaVerify.isPending || mfaToken.length !== 6} className="btn-primary text-xs py-1.5">
+                      {mfaVerify.isPending ? 'Verifying…' : 'Confirm'}
+                    </button>
+                    <button type="button" onClick={() => { setMfaStep('idle'); setMfaToken(''); setMfaEnrollData(null); }} className="btn-secondary text-xs py-1.5">
+                      Cancel
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* API Keys */}
+        {currentUser && (
+          <div>
+            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+              <Key size={14} />
+              Personal API Keys
+            </h3>
+            <div className="card p-4 space-y-3">
+              <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>
+                API keys let external tools authenticate to the dashboard using the <code className="font-mono px-1 rounded" style={{ background: 'var(--color-bg-base)' }}>X-API-Key</code> header. Keys are shown once at creation.
+              </p>
+
+              {keyMsg && (
+                <div className={`text-xs px-3 py-2 rounded-lg border ${keyMsg.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
+                  {keyMsg.text}
+                </div>
+              )}
+
+              {/* Newly created key banner */}
+              {newlyCreatedKey && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-semibold text-amber-400">Key created — copy it now, it won't be shown again</p>
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={newlyCreatedKey.key}
+                      className="input flex-1 font-mono text-xs"
+                    />
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(newlyCreatedKey.key); }}
+                      className="btn-secondary text-xs py-1.5 flex items-center gap-1"
+                      title="Copy to clipboard"
+                    >
+                      <Copy size={12} /> Copy
+                    </button>
+                    <button onClick={() => setNewlyCreatedKey(null)} className="text-gray-400 hover:text-gray-200 p-1" title="Dismiss">
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Existing keys */}
+              {apiKeys && apiKeys.length > 0 && (
+                <div className="space-y-2">
+                  {apiKeys.map((k) => (
+                    <div key={k.id} className="flex items-center gap-3 p-3 rounded-lg border" style={{ borderColor: 'var(--color-border)' }}>
+                      <Key size={14} style={{ color: 'var(--color-text-faint)' }} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>{k.name}</p>
+                        <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>
+                          Created {formatDistanceToNow(new Date(k.created_at), { addSuffix: true })}
+                          {' · '}
+                          {k.last_used_at ? `Last used ${formatDistanceToNow(new Date(k.last_used_at), { addSuffix: true })}` : 'Never used'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => { if (confirm(`Revoke key "${k.name}"?`)) revokeApiKey.mutate(k.id); }}
+                        className="text-red-400 hover:text-red-300 p-1 rounded hover:bg-red-500/10 transition-colors"
+                        title="Revoke key"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!showKeyForm ? (
+                <button
+                  onClick={() => setShowKeyForm(true)}
+                  className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg border border-dashed transition-colors hover:opacity-80"
+                  style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                >
+                  <Plus size={14} />
+                  Generate new API key
+                </button>
+              ) : (
+                <form onSubmit={handleCreateApiKey} className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Key name (e.g. CI pipeline)"
+                    value={newKeyName}
+                    onChange={(e) => setNewKeyName(e.target.value)}
+                    required
+                    maxLength={100}
+                    className="input flex-1 text-sm"
+                    autoFocus
+                  />
+                  <button type="submit" disabled={createApiKey.isPending} className="btn-primary text-xs py-1.5">
+                    {createApiKey.isPending ? 'Creating…' : 'Create'}
+                  </button>
+                  <button type="button" onClick={() => { setShowKeyForm(false); setNewKeyName(''); }} className="btn-secondary text-xs py-1.5">
+                    Cancel
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Active Sessions */}
+        {currentUser && (
+          <div>
+            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+              <Monitor size={14} />
+              Active Sessions
+            </h3>
+            <div className="card p-4 space-y-2">
+              <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>
+                All sessions currently logged in to your account. Revoke any session you don't recognize.
+              </p>
+              {activeSessions && activeSessions.length > 0 ? (
+                activeSessions.map((s) => (
+                  <div key={s.id} className="flex items-center gap-3 p-3 rounded-lg border" style={{ borderColor: 'var(--color-border)' }}>
+                    <Monitor size={14} style={{ color: 'var(--color-text-faint)' }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                          {parseUserAgent(s.user_agent)}
+                        </p>
+                        {s.is_current && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/30">
+                            current
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>
+                        {s.ip_address || 'Unknown IP'}
+                        {' · '}
+                        Last seen {formatDistanceToNow(new Date(s.last_activity), { addSuffix: true })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => revokeSession.mutate(s.id)}
+                      disabled={s.is_current || revokeSession.isPending}
+                      className="text-red-400 hover:text-red-300 p-1 rounded hover:bg-red-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      title={s.is_current ? 'Cannot revoke current session — use Sign Out' : 'Revoke session'}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-center py-4" style={{ color: 'var(--color-text-faint)' }}>No active sessions found</p>
+              )}
             </div>
           </div>
         )}
