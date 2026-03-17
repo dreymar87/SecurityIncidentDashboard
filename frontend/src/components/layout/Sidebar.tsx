@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Crosshair, X, Users, LogOut, LogIn, Bell
+  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Crosshair, X, Users, LogOut, LogIn, Bell, Activity
 } from 'lucide-react';
 import { useCurrentUser, useLogout, useUnreadAlertCount } from '../../api/hooks';
 
