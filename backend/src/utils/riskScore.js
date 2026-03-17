@@ -43,14 +43,15 @@ async function recalculateAllRiskScores(weights) {
   let offset = 0;
   const batchSize = 500;
   let totalUpdated = 0;
+  let hasMore = true;
 
-  while (true) {
+  while (hasMore) {
     const rows = await db('vulnerabilities')
       .select('id', 'cvss_score', 'exploit_available', 'cisa_kev')
       .limit(batchSize)
       .offset(offset);
 
-    if (rows.length === 0) break;
+    if (rows.length === 0) { hasMore = false; break; }
 
     await Promise.all(
       rows.map((row) =>
