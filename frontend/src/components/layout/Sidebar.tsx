@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Crosshair, X, Users, LogOut, LogIn, Bell, Activity
+  LayoutDashboard, Shield, AlertTriangle, Radar, Upload, Settings, Crosshair, X, Users, Bell, Activity
 } from 'lucide-react';
-import { useCurrentUser, useLogout, useUnreadAlertCount } from '../../api/hooks';
+import { useCurrentUser, useUnreadAlertCount } from '../../api/hooks';
+import { UserSettingsMenu } from './UserSettingsMenu';
 
 const baseNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -11,7 +12,6 @@ const baseNavItems = [
   { to: '/threat-intel', icon: Radar, label: 'Threat Intel' },
   { to: '/attack', icon: Crosshair, label: 'ATT&CK' },
   { to: '/notifications', icon: Bell, label: 'Notifications' },
-  { to: '/import', icon: Upload, label: 'Import Data' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -23,22 +23,17 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) {
   const { data: currentUser } = useCurrentUser();
-  const logout = useLogout();
   const { data: unread } = useUnreadAlertCount();
   const isAdmin = currentUser?.role === 'admin';
   const unreadCount = unread?.count ?? 0;
 
   const navItems = [
     ...baseNavItems,
-    ...(isAdmin ? [{ to: '/admin/users', icon: Users, label: 'Users' }] : []),
+    ...(isAdmin ? [
+      { to: '/import', icon: Upload, label: 'Import Data' },
+      { to: '/admin/users', icon: Users, label: 'Users' },
+    ] : []),
   ];
-
-  async function handleLogout() {
-    try {
-      await logout.mutateAsync();
-      window.location.reload();
-    } catch { /* ignore */ }
-  }
 
   return (
     <>
@@ -114,34 +109,10 @@ export function Sidebar({ collapsed, mobileOpen, onMobileClose }: SidebarProps) 
           ))}
         </nav>
 
-        <div className="px-4 py-4 border-t border-gray-800">
-          {!collapsed && currentUser && (
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-xs font-medium text-gray-300">{currentUser.username}</p>
-                <p className="text-xs text-gray-500 capitalize">{currentUser.role}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="text-gray-500 hover:text-gray-300 transition-colors"
-                aria-label="Log out"
-                title="Log out"
-              >
-                <LogOut size={14} />
-              </button>
-            </div>
-          )}
-          {!collapsed && !currentUser && (
-            <NavLink
-              to="/login"
-              className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition-colors mb-3"
-            >
-              <LogIn size={12} />
-              <span>Log in</span>
-            </NavLink>
-          )}
+        <div className={`py-3 border-t border-gray-800 ${collapsed ? 'px-2' : 'px-3'}`}>
+          <UserSettingsMenu collapsed={collapsed} />
           {!collapsed && (
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-gray-500 mt-2 px-1">
               <Activity size={12} className="text-green-400" />
               <span>Live monitoring active</span>
             </div>
