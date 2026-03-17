@@ -22,18 +22,41 @@ async function getUserAlertThreshold(req) {
   }
 }
 
-// GET /api/alerts — recent alerts (filtered by user's severity preference)
+// GET /api/alerts — alert history with optional filters and pagination
+// Query params: severity, source (type), from, to, read, page, limit
 router.get('/', async (req, res) => {
   try {
-    let query = db('alerts').orderBy('created_at', 'desc').limit(50);
+    const { severity, source, from, to, read, page, limit: limitParam } = req.query;
 
-    const threshold = await getUserAlertThreshold(req);
+    // Apply user's personal severity threshold by default, but allow explicit override
+    const threshold = severity || (await getUserAlertThreshold(req));
     const severities = getSeveritiesAtOrAbove(threshold);
-    if (severities) {
-      query = query.whereIn('severity', severities);
+
+    let query = db('alerts').orderBy('created_at', 'desc');
+
+    if (severities) query = query.whereIn('severity', severities);
+    if (source) query = query.where('type', source);
+    if (from) query = query.where('created_at', '>=', new Date(from));
+    if (to) query = query.where('created_at', '<=', new Date(to));
+    if (read === 'true') query = query.where('read', true);
+    if (read === 'false') query = query.where('read', false);
+
+    // Pagination — only if page param provided (backward compat: default returns array)
+    if (page !== undefined) {
+      const pageNum = Math.max(1, parseInt(page) || 1);
+      const pageSize = Math.min(200, Math.max(1, parseInt(limitParam) || 50));
+      const offset = (pageNum - 1) * pageSize;
+
+      const countQuery = query.clone().count('id as count').clearOrder();
+      const [{ count }] = await countQuery;
+      const total = parseInt(count);
+
+      const alerts = await query.limit(pageSize).offset(offset);
+      return res.json({ alerts, total, page: pageNum, limit: pageSize });
     }
 
-    const alerts = await query;
+    // Legacy: no pagination — return plain array capped at 100
+    const alerts = await query.limit(100);
     res.json(alerts);
   } catch (err) {
     logger.error({ err }, 'Alert route error');

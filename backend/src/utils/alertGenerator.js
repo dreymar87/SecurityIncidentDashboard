@@ -1,5 +1,6 @@
 const db = require('../db');
 const logger = require('./logger');
+const { dispatchAlerts } = require('../services/notification.service');
 
 async function generateAlerts(source, records) {
   if (!records || records.length === 0) return;
@@ -38,6 +39,9 @@ async function generateAlerts(source, records) {
   if (newAlerts.length > 0) {
     await db('alerts').insert(newAlerts);
     logger.info(`[Alerts] Generated ${newAlerts.length} new alerts from ${source}`);
+    dispatchAlerts(newAlerts).catch((err) =>
+      logger.error({ err }, '[Alerts] Notification dispatch failed')
+    );
   }
 }
 
