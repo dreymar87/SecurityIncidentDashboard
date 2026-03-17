@@ -123,10 +123,16 @@ router.post('/logout', async (req, res) => {
 });
 
 // GET /auth/me
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
   if (req.session.mfa_pending) return res.status(401).json({ error: 'MFA verification required', mfa_pending: true });
-  res.json({ id: req.user.id, username: req.user.username, role: req.user.role });
+  try {
+    const user = await db('users').where('id', req.user.id).select('totp_enabled', 'mfa_required').first();
+    res.json({ id: req.user.id, username: req.user.username, role: req.user.role, totp_enabled: user?.totp_enabled ?? false, mfa_required: user?.mfa_required ?? false });
+  } catch (err) {
+    logger.error({ err }, 'Failed to fetch user MFA state in /auth/me');
+    res.json({ id: req.user.id, username: req.user.username, role: req.user.role, totp_enabled: false, mfa_required: false });
+  }
 });
 
 // ── MFA endpoints ─────────────────────────────────────────────────────────────
@@ -182,8 +188,9 @@ router.post('/mfa/challenge', async (req, res) => {
 });
 
 // POST /auth/mfa/enroll — generate TOTP secret and QR code for enrollment
-router.post('/mfa/enroll', requireAuth, async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+// Note: intentionally allows mfa_pending sessions so enrollment works during the login flow
+router.post('/mfa/enroll', async (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Authentication required' });
 
   try {
     const user = await db('users').where('id', req.user.id).select('username').first();
@@ -203,8 +210,9 @@ router.post('/mfa/enroll', requireAuth, async (req, res) => {
 });
 
 // POST /auth/mfa/verify — confirm enrollment by verifying the first TOTP code
-router.post('/mfa/verify', requireAuth, async (req, res) => {
-  if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+// Note: intentionally allows mfa_pending sessions so verify works during the login enrollment flow
+router.post('/mfa/verify', async (req, res) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Authentication required' });
 
   const { token } = req.body;
   if (!token) return res.status(400).json({ error: 'TOTP token is required' });
